@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { GEMINI_MODEL_FLASH } from "../constants";
 import { configService } from "./configService";
 import { securityService } from "./securityService";
@@ -79,7 +79,7 @@ const wrapWithSecurityAndTelemetry = async <T>(
 };
 
 // --- 1. Predictive Maintenance Service ---
-const maintenanceSchema: Schema = {
+const maintenanceSchema = {
   type: Type.OBJECT,
   properties: {
     status: { type: Type.STRING, enum: ['Normal', 'Warning', 'Critical'] },
@@ -150,7 +150,7 @@ export const analyzeMachineHealth = async (machine: MachineStatus): Promise<Main
 };
 
 // --- 2. Production Forecasting Service ---
-const productionSchema: Schema = {
+const productionSchema = {
   type: Type.OBJECT,
   properties: {
     skuId: { type: Type.STRING },
@@ -207,7 +207,7 @@ export const forecastProduction = async (sku: ProductSKU): Promise<ProductionIns
 };
 
 // --- 3. Procurement Optimization Service ---
-const procurementSchema: Schema = {
+const procurementSchema = {
   type: Type.OBJECT,
   properties: {
     action: { type: Type.STRING, enum: ['Buy Now', 'Wait'] },
@@ -261,7 +261,7 @@ export const optimizeProcurement = async (material: Material): Promise<Procureme
 };
 
 // --- 4. What-If Simulator ---
-const simulationSchema: Schema = {
+const simulationSchema = {
   type: Type.OBJECT,
   properties: {
     projectedMargin: { type: Type.NUMBER },
