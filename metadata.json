@@ -1,0 +1,5 @@
+{
+  "name": "Nexus Manufacturing AI",
+  "description": "A comprehensive AI dashboard for manufacturers to predict machine failures, optimize production schedules, and forecast material pricing.",
+  "requestFramePermissions": []
+}

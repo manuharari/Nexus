@@ -1,0 +1,308 @@
+
+import { Language } from "../types";
+
+const en = {
+    sidebar: {
+      dashboard: "Dashboard",
+      maintenance: "Maintenance",
+      production: "Production",
+      procurement: "Procurement",
+      schedule: "Schedule & Logistics",
+      reports: "Reports & Data",
+      users: "User Management",
+      crm: "CRM & Sales",
+      erp: "ERP & Finance",
+      quality: "Visual Quality",
+      simulation: "What-If Simulator",
+      digitalTwin: "Digital Twin",
+      energy: "Energy Mgmt",
+      workOrders: "Work Orders",
+      documents: "Resources & Docs",
+      platformAdmin: "Platform Admin",
+      industryDiscrete: "Discrete Manufacturing",
+      industryPaint: "Process Mfg (Paint/Chem)",
+      secure: "Secure Connection",
+      signOut: "Sign Out",
+      adminSection: "Administration",
+      missingKey: "API Key Missing"
+    },
+    dashboard: {
+      activeIndustry: "Active Industry Context",
+      systemStatus: "System Status",
+      operational: "Operational",
+      machineHealth: "Machine Health",
+      realTime: "Real-time",
+      issuesDetected: "Issue(s) detected",
+      allNominal: "All systems nominal",
+      predictedDemand: "Predicted Demand",
+      forecast: "Forecast",
+      units: "units",
+      optimizationAvailable: "Optimization available",
+      materialCosts: "Material Costs",
+      market: "Market",
+      vsLastMonth: "vs last month",
+      buySignal: "Buy signal for Copper",
+      productionEff: "Production vs. Efficiency",
+      plantMetrics: "Overall plant performance metrics",
+      last6Months: "Last 6 Months",
+      startBatch: "Start New Batch",
+      startBatchDesc: "AI analysis suggests starting the 'Winter-24' batch today to avoid bottleneck.",
+      viewSchedule: "View Schedule",
+      aiStatus: "System Status",
+      aiStatusDesc: "All AI models are active. Last comprehensive scan was 14 minutes ago.",
+      latency: "Latency"
+    },
+    maintenance: {
+      machineFleet: "Machine Fleet",
+      resolveDowntime: "Resolve Downtime",
+      resolveDesc: "Machine is returning to operation. Please log the reason for downtime or actions taken.",
+      placeholderReason: "e.g., Replaced worn belt, reset controller...",
+      cancel: "Cancel",
+      logRestart: "Log & Restart",
+      sensorSuite: "Recommended Sensor Suite",
+      closeGuide: "Close Guide",
+      viewSensors: "View Recommended Sensors",
+      predictiveAI: "Predictive AI",
+      realTimeAnalysis: "Real-time Analysis",
+      runPrediction: "Run Prediction",
+      processing: "Processing...",
+      aiSummary: "AI Summary",
+      riskLevel: "Risk Level",
+      failProb: "Fail Probability",
+      maintenanceLog: "Maintenance Log",
+      noRecords: "No maintenance records found.",
+      flagWarning: "Flag Warning",
+      triggerStop: "Trigger Stop",
+      resolveRestart: "Resolve & Restart",
+      downtime: "downtime"
+    },
+    production: {
+      catalog: "Product Catalog",
+      lowStock: "Low Stock",
+      healthy: "Healthy",
+      plantEff: "Plant Efficiency (OEE)",
+      availability: "Disponibilidad",
+      performance: "Performance",
+      quality: "Quality",
+      overall: "Overall",
+      leadTime: "Lead Time",
+      days: "days",
+      generateSchedule: "Generate Schedule",
+      restricted: "Restricted",
+      onHand: "On Hand",
+      reserved: "Reserved",
+      reorderPoint: "Reorder Point",
+      productionPlan: "Production Plan",
+      recStart: "Recommended Start",
+      quantity: "Quantity",
+      units: "units",
+      projStockout: "Projected Stockout",
+      demandCapacity: "Demand vs. Capacity",
+      manageStock: "Manage Stock",
+      addStock: "Add Stock",
+      subStock: "Subtract",
+      setStock: "Set Count",
+      reason: "Reason / Reference"
+    },
+    procurement: {
+      marketIntel: "Market Intelligence",
+      inboundLogistics: "Inbound Logistics",
+      searchPlaceholder: "Search materials...",
+      moq: "MOQ",
+      supplierScorecard: "Supplier Scorecard",
+      grade: "Grade",
+      onTime: "On-Time",
+      price: "Price",
+      globalIndex: "Global Price Index",
+      analyzing: "Analyzing Market...",
+      predictPrice: "Predict Best Price",
+      aiRec: "AI Recommendation",
+      financialImpact: "Financial Impact",
+      estSavings: "Est. Savings",
+      confidence: "Confidence",
+      buyWindow: "Buy Window",
+      marketAnalysis: "Market Analysis",
+      incomingShipments: "Incoming Shipments",
+      trackDeliveries: "Track raw material deliveries and arrival estimates.",
+      status: "Status",
+      material: "Material",
+      supplier: "Supplier",
+      quantity: "Quantity",
+      transport: "Transport",
+      estArrival: "Est. Arrival",
+      noShipments: "No incoming shipments found."
+    },
+    calendar: {
+      scheduleEvent: "Schedule New Event",
+      title: "Title",
+      date: "Date",
+      type: "Type",
+      desc: "Description",
+      addToSchedule: "Add to Schedule",
+      submitApproval: "Submit for Approval",
+      approvalNote: "Area Leaders must approve new events.",
+      addEvent: "Add Event",
+      scheduleDetails: "Schedule Details",
+      detailsDesc: "Upcoming events and logistics.",
+      location: "Location",
+      approveEvent: "Approve Event",
+      closeDetails: "Close Details",
+      selectEvent: "Select an event from the calendar to view details.",
+      pending: "Pending",
+      confirmed: "Confirmed"
+    },
+    reports: {
+      title: "Reports & Data Center",
+      subtitle: "Manage system data. Download templates, then upload CSVs to update AI models.",
+      generateDaily: "Generate Daily Report",
+      noPermission: "No permission to download/edit data.",
+      materialsPrice: "Materials & Pricing",
+      materialsDesc: "Upload supplier price history.",
+      machineMaint: "Machine Maintenance",
+      machineDesc: "Upload sensor telemetry and logs.",
+      salesInv: "Sales & Inventory",
+      salesDesc: "Upload sales history and inventory levels.",
+      downloadTemplate: "Download Template",
+      generating: "Generating...",
+      uploadData: "Upload Data",
+      howToTest: "How to Test",
+      step1: "Download Template",
+      step1Desc: "Get the CSV structure.",
+      step2: "Modify Data",
+      step2Desc: "Change values in the CSV.",
+      step3: "Upload & Verify",
+      step3Desc: "See the dashboard update instantly."
+    },
+    login: {
+      title: "Manufacturing Intelligence Platform",
+      email: "Email Address",
+      password: "Password",
+      signIn: "Sign In",
+      demoCreds: "Demo Credentials",
+      master: "Master Admin",
+      maint: "Maintenance",
+      purchasing: "Purchasing",
+      sales: "Sales",
+      cLevel: "C-Level (Director)",
+      error: "Invalid credentials or account inactive.",
+      accountSuspended: "Account Suspended. Contact Support."
+    },
+    chat: {
+      teamChat: "Team Chat",
+      noMessages: "No messages yet.",
+      messagePlaceholder: "Message",
+      channels: "Channels",
+      directMessages: "Direct Messages",
+      selectUser: "Select a user",
+      direction: "Direction (C-Level)"
+    },
+    alerts: {
+      notifications: "Notifications",
+      allNominal: "All systems nominal."
+    },
+    crm: {
+        customers: "Customers",
+        pipeline: "Order Pipeline",
+        churnRisk: "Churn Risk",
+        lifetimeValue: "Lifetime Value",
+        segment: "Segment",
+        overview: "Overview",
+        outboundOrders: "Outbound Logistics"
+    },
+    erp: {
+        financials: "Financials",
+        revenue: "Revenue",
+        margin: "Gross Margin",
+        netProfit: "Net Profit"
+    },
+    quality: {
+        visualCheck: "Visual Inspection",
+        uploadImage: "Upload Image",
+        detecting: "Detecting Defects...",
+        grade: "Quality Grade",
+        pass: "PASS",
+        fail: "FAIL"
+    },
+    simulation: {
+        title: "What-If Simulator",
+        runSim: "Run Simulation",
+        parameters: "Simulation Parameters",
+        results: "Projected Impact"
+    },
+    twin: {
+        factoryMap: "Factory Floor Map",
+        legend: "Legend",
+        running: "Running",
+        stopped: "Stopped"
+    },
+    workOrder: {
+        ticketBoard: "Ticket Board",
+        open: "Open",
+        inProgress: "In Progress",
+        closed: "Closed"
+    },
+    energy: {
+        consumption: "Power Consumption",
+        peakUsage: "Peak Usage",
+        efficiency: "Efficiency"
+    },
+    documents: {
+        title: "Resource Library",
+        subtitle: "Central repository for manuals and docs.",
+        upload: "Upload File",
+        download: "Download",
+        delete: "Delete",
+        fileSize: "Size",
+        uploadedBy: "Uploaded By",
+        date: "Date"
+    },
+    share: {
+        shareWorkspace: "Share Workspace",
+        inviteTeam: "Invite Team Members",
+        inviteDesc: "Invite colleagues to collaborate.",
+        emailPlaceholder: "colleague@company.com",
+        sendInvite: "Send Invites",
+        copyLink: "Copy Link",
+        linkCopied: "Copied!",
+        role: "Role",
+        viewer: "Viewer",
+        editor: "Editor",
+        admin: "Admin",
+        accessLink: "Workspace Access Link"
+    },
+    platformAdmin: {
+        accountDetails: "Account Details",
+        moduleConfig: "Module Configuration",
+        newTenant: "New Tenant",
+        editTenant: "Edit Tenant"
+    }
+};
+
+const es: typeof en = {
+    ...en,
+    sidebar: {
+        ...en.sidebar,
+        dashboard: "Tablero",
+        maintenance: "Mantenimiento",
+        production: "Producción",
+        procurement: "Compras",
+        schedule: "Calendario",
+        reports: "Reportes",
+        users: "Usuarios",
+        platformAdmin: "Admin de Plataforma",
+        industryDiscrete: "Manufactura Discreta",
+        industryPaint: "Manufactura de Proceso",
+        secure: "Conexión Segura",
+        signOut: "Cerrar Sesión",
+        adminSection: "Administración"
+    }
+};
+
+export const translations = {
+  en,
+  es
+};
+
+export const getTranslation = (lang: Language): typeof en => {
+    return translations[lang] || translations['en'];
+}
