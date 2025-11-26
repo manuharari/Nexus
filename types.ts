@@ -47,6 +47,7 @@ export interface ClientConfiguration {
   // Tech Params
   rateLimitPerMinute: number;
   edgeBufferSize: number;
+  defaultIndustry?: IndustryType; // Locks the context if set
 }
 
 export enum IndustryType {

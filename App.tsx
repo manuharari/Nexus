@@ -100,6 +100,14 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // --- AUTO-SWITCH INDUSTRY ON CLIENT CHANGE ---
+  useEffect(() => {
+      if (clientConfig.defaultIndustry) {
+          setCurrentIndustry(clientConfig.defaultIndustry);
+          dataService.switchIndustry(clientConfig.defaultIndustry);
+      }
+  }, [clientConfig]);
+
   // --- AUTOMATED DAILY REPORT SCHEDULER ---
   useEffect(() => {
       if (!currentUser) return;
@@ -237,6 +245,9 @@ const App: React.FC = () => {
     return <LoginView onLoginSuccess={handleLoginSuccess} lang={language} onToggleLang={toggleLanguage} />;
   }
 
+  // Check if current client forces an industry context
+  const isIndustryLocked = !!clientConfig.defaultIndustry;
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-primary-500 selection:text-white">
       
@@ -280,11 +291,14 @@ const App: React.FC = () => {
            <div className="bg-slate-950 rounded-lg p-2 border border-slate-800 space-y-1">
               <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Data Context</label>
               <div className="flex items-center gap-2 relative">
-                <Settings2 className="w-4 h-4 text-slate-400 absolute left-2" />
+                <Settings2 className={`w-4 h-4 absolute left-2 ${isIndustryLocked ? 'text-slate-600' : 'text-slate-400'}`} />
                 <select 
                     value={currentIndustry} 
                     onChange={handleIndustryChange}
-                    className="w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none cursor-pointer hover:border-slate-500 transition-colors shadow-sm"
+                    disabled={isIndustryLocked}
+                    className={`w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none shadow-sm transition-colors
+                        ${isIndustryLocked ? 'opacity-50 cursor-not-allowed bg-slate-900 border-slate-800 text-slate-500' : 'cursor-pointer hover:border-slate-500'}
+                    `}
                 >
                     <option value={IndustryType.DISCRETE_MFG}>{t.sidebar.industryDiscrete}</option>
                     <option value={IndustryType.PROCESS_PAINT}>{t.sidebar.industryPaint}</option>

@@ -17,10 +17,10 @@ import {
 } from "../types";
 
 // Initialize API Client
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const hasApiKey = () => !!apiKey;
+export const hasApiKey = () => !!process.env.API_KEY;
 
 // --- HELPER: Context Injection & Security Wrapper ---
 const getModuleContext = () => {

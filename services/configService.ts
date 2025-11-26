@@ -1,5 +1,5 @@
 
-import { ClientConfiguration, ModuleId } from '../types';
+import { ClientConfiguration, ModuleId, IndustryType } from '../types';
 
 const DEFAULT_MODULES: Record<ModuleId, boolean> = {
   predictive_maintenance: true,
@@ -26,7 +26,9 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
     renewalDate: '2024-12-31',
     enabledModules: { ...DEFAULT_MODULES },
     rateLimitPerMinute: 1000,
-    edgeBufferSize: 5000
+    edgeBufferSize: 5000,
+    // Demo account remains unlocked to show versatility
+    defaultIndustry: undefined 
   },
   {
     clientId: 'tech-auto',
@@ -41,7 +43,8 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
         crm: false 
     },
     rateLimitPerMinute: 5000,
-    edgeBufferSize: 10000
+    edgeBufferSize: 10000,
+    defaultIndustry: IndustryType.AUTOMOTIVE
   },
   {
     clientId: 'mid-mfg',
@@ -65,7 +68,8 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
       documents: true
     },
     rateLimitPerMinute: 100,
-    edgeBufferSize: 1000
+    edgeBufferSize: 1000,
+    defaultIndustry: IndustryType.DISCRETE_MFG
   },
   {
     clientId: 'basic-01',
@@ -89,7 +93,8 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
       documents: true
     },
     rateLimitPerMinute: 20,
-    edgeBufferSize: 100
+    edgeBufferSize: 100,
+    defaultIndustry: IndustryType.DISCRETE_MFG
   }
 ];
 
