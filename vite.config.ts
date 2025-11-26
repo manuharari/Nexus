@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // Define process.env.API_KEY so it is replaced by the actual value during build
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      // Define process.env so it is available in the browser
+      'process.env': JSON.stringify(env)
     }
   };
 });
