@@ -54,6 +54,7 @@ import { hasApiKey } from './services/geminiService';
 import { authService } from './services/authService';
 import { dataService } from './services/dataService';
 import { configService } from './services/configService';
+import { emailService } from './services/emailService';
 import { getTranslation } from './services/i18nService';
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
@@ -98,6 +99,41 @@ const App: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // --- AUTOMATED DAILY REPORT SCHEDULER ---
+  useEffect(() => {
+      if (!currentUser) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastReportDate = localStorage.getItem('NEXUS_LAST_DAILY_REPORT');
+
+      if (lastReportDate !== today && currentUser.role === 'master_admin') {
+          // Generate Report
+          const report = dataService.getDailySummary();
+          
+          // Send Email
+          emailService.sendAlertEmail(
+              'master_admin',
+              `[AUTOMATED] Daily Executive Report - ${today}`,
+              `System Status: ${report.machinesAtRisk > 0 ? 'Action Required' : 'Normal'}<br/>
+               Machines at Risk: ${report.machinesAtRisk}<br/>
+               Predicted Stockouts: ${report.stockoutsPredicted}<br/>
+               Detailed CSV attached.`
+          );
+
+          // Notify UI
+          addAlert({
+              id: `rpt-${Date.now()}`,
+              type: 'info',
+              message: `Daily Report generated and emailed to ${currentUser.email}`,
+              timestamp: new Date().toISOString(),
+              severity: 'info'
+          });
+
+          // Mark as done for today
+          localStorage.setItem('NEXUS_LAST_DAILY_REPORT', today);
+      }
+  }, [currentUser]);
 
   const resetIdleTimer = () => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);

@@ -1,5 +1,5 @@
 
-import { MachineStatus, ProductSKU, Material, SensorReading, SalesRecord, PricePoint, IndustryType, CalendarEvent, ClientDelivery, IncomingShipment, Customer, SalesOrder, WorkOrder, FinancialMetric, ShippingCarrier, DocumentResource, InventoryAction } from '../types';
+import { MachineStatus, ProductSKU, Material, SensorReading, SalesRecord, PricePoint, IndustryType, CalendarEvent, ClientDelivery, IncomingShipment, Customer, SalesOrder, WorkOrder, FinancialMetric, ShippingCarrier, DocumentResource, InventoryAction, DailyReport } from '../types';
 import { MOCK_DATASETS, MOCK_DELIVERIES, MOCK_COMPANY_EVENTS, MOCK_INCOMING_SHIPMENTS, MOCK_CUSTOMERS, MOCK_ORDERS, MOCK_WORK_ORDERS, MOCK_FINANCIALS, MOCK_DOCUMENTS } from '../constants';
 import { securityService } from './securityService';
 import { authService } from './authService';
@@ -54,6 +54,23 @@ class DataService {
       `Switched industry context to ${type}`,
       'SUCCESS'
     );
+  }
+
+  // --- Reporting Helper ---
+  public getDailySummary(): DailyReport {
+      const alerts = 3; // Mock count or derived from alert state
+      const machinesAtRisk = this.machines.filter(m => m.status !== 'Running').length;
+      const stockouts = this.skus.filter(s => s.inventory.onHand < s.inventory.reorderPoint).length;
+      const buySignals = this.materials.length > 0 ? 1 : 0; // Simplified logic
+
+      return {
+          date: new Date().toISOString().split('T')[0],
+          alertsGenerated: alerts,
+          machinesAtRisk: machinesAtRisk,
+          stockoutsPredicted: stockouts,
+          buySignals: buySignals,
+          summary: `Daily Scan: ${machinesAtRisk} machines require attention. ${stockouts} SKUs below reorder point.`
+      };
   }
 
   // --- Inventory Management ---

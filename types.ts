@@ -434,7 +434,7 @@ export interface DocumentResource {
 
 export interface Alert {
   id: string;
-  type: 'failure' | 'stock' | 'price';
+  type: 'failure' | 'stock' | 'price' | 'info';
   message: string;
   timestamp: string;
   severity: 'info' | 'warning' | 'critical';
