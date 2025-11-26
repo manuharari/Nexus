@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { GEMINI_MODEL_FLASH } from "../constants";
 import { configService } from "./configService";
@@ -16,9 +15,18 @@ import {
   QualityCheck
 } from "../types";
 
-// Initialize API Client
+// Initialize API Client with safety check
 // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAiClient = () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        console.warn("API Key is missing. AI features will be disabled.");
+        return null;
+    }
+    return new GoogleGenAI({ apiKey });
+};
+
+const aiClient = getAiClient();
 
 export const hasApiKey = () => !!process.env.API_KEY;
 
@@ -46,6 +54,8 @@ const wrapWithSecurityAndTelemetry = async <T>(
     const startTime = Date.now();
 
     try {
+        if (!aiClient) throw new Error("API Key is missing or invalid.");
+
         // 3. Execute
         const result = await fn();
         
@@ -121,7 +131,8 @@ export const analyzeMachineHealth = async (machine: MachineStatus): Promise<Main
       `;
 
       try {
-        const response = await ai.models.generateContent({
+        if (!aiClient) throw new Error("No Client");
+        const response = await aiClient.models.generateContent({
           model: GEMINI_MODEL_FLASH,
           contents: prompt,
           config: {
@@ -180,7 +191,8 @@ export const forecastProduction = async (sku: ProductSKU): Promise<ProductionIns
       `;
 
       try {
-        const response = await ai.models.generateContent({
+        if (!aiClient) throw new Error("No Client");
+        const response = await aiClient.models.generateContent({
           model: GEMINI_MODEL_FLASH,
           contents: prompt,
           config: {
@@ -235,7 +247,8 @@ export const optimizeProcurement = async (material: Material): Promise<Procureme
       `;
 
       try {
-        const response = await ai.models.generateContent({
+        if (!aiClient) throw new Error("No Client");
+        const response = await aiClient.models.generateContent({
           model: GEMINI_MODEL_FLASH,
           contents: prompt,
           config: {
@@ -282,7 +295,8 @@ export const runSimulation = async (params: SimulationParams): Promise<Simulatio
       `;
 
       try {
-        const response = await ai.models.generateContent({
+        if (!aiClient) throw new Error("No Client");
+        const response = await aiClient.models.generateContent({
             model: GEMINI_MODEL_FLASH,
             contents: prompt,
             config: { responseMimeType: "application/json", responseSchema: simulationSchema }
@@ -319,8 +333,10 @@ export const analyzeImageQuality = async (imageBase64: string): Promise<Omit<Qua
 export const processVoiceCommand = async (transcript: string): Promise<string> => {
     return wrapWithSecurityAndTelemetry('GeminiAI', 'voiceCommand', async () => {
         if (!configService.isModuleEnabled('voice_assistant')) return "Voice Module Disabled";
+        if (!aiClient) return "Voice Assistant Unavailable (Missing API Key)";
+        
         const prompt = `User asked: "${transcript}". Answer concisely.`;
-        const response = await ai.models.generateContent({ model: GEMINI_MODEL_FLASH, contents: prompt });
+        const response = await aiClient.models.generateContent({ model: GEMINI_MODEL_FLASH, contents: prompt });
         return response.text || "I didn't catch that.";
     });
 };
