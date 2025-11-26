@@ -1,9 +1,17 @@
-// The reference to "vite/client" is removed to prevent errors when the type definition is missing.
+// Removed reference to vite/client which was causing type definition errors
 // /// <reference types="vite/client" />
 
-declare namespace NodeJS {
-  interface ProcessEnv {
+declare var process: {
+  env: {
     API_KEY: string;
     [key: string]: string | undefined;
   }
+};
+
+interface ImportMetaEnv {
+  readonly API_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
