@@ -411,8 +411,8 @@ export const MOCK_ORDERS: SalesOrder[] = [
 
 // --- WORK ORDER MOCK DATA ---
 export const MOCK_WORK_ORDERS: WorkOrder[] = [
-  { id: 'WO-505', machineId: 'M-102', machineName: 'Hydraulic Press B', title: 'Hydraulic Leak Repair', description: 'Seal failure on main piston.', priority: 'High', status: 'In Progress', assignedTechnician: 'Mike R.', createdDate: '2023-11-24' },
-  { id: 'WO-506', machineId: 'M-101', machineName: 'CNC Milling Center A', title: 'Routine Calibration', description: 'Quarterly axis calibration.', priority: 'Low', status: 'Open', createdDate: '2023-11-25' },
+  { id: 'WO-505', machineId: 'M-102', machineName: 'Hydraulic Press B', category: 'Maintenance', title: 'Hydraulic Leak Repair', description: 'Seal failure on main piston.', priority: 'High', status: 'In Progress', assignedTechnician: 'Mike R.', createdDate: '2023-11-24' },
+  { id: 'WO-506', machineId: 'M-101', machineName: 'CNC Milling Center A', category: 'Maintenance', title: 'Routine Calibration', description: 'Quarterly axis calibration.', priority: 'Low', status: 'Open', createdDate: '2023-11-25' },
 ];
 
 export const MOCK_FINANCIALS: FinancialMetric[] = [

@@ -12,10 +12,12 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // We define the whole object to ensure properties are accessible
+      // Define process.env.API_KEY specifically to avoid replacing the entire process.env object destructively
+      'process.env.API_KEY': JSON.stringify(apiKey),
+      // Polyfill standard process.env for other potential library usages (safe fallback)
       'process.env': JSON.stringify({
-        API_KEY: apiKey,
         NODE_ENV: mode,
+        API_KEY: apiKey
       }),
     }
   };

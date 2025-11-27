@@ -381,16 +381,21 @@ export interface QualityCheck {
 
 // --- Work Order Types ---
 
+export type WorkOrderCategory = 'Maintenance' | 'Production';
+
 export interface WorkOrder {
   id: string;
   machineId: string;
   machineName: string;
+  category: WorkOrderCategory;
   title: string;
   description: string;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'Open' | 'In Progress' | 'Paused' | 'Closed';
   assignedTechnician?: string;
   createdDate: string;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
   resolvedDate?: string;
 }
 

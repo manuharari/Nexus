@@ -128,15 +128,59 @@ class DataService {
     }
   }
 
-  // --- Work Order Management ---
-  public createWorkOrder(wo: Omit<WorkOrder, 'id' | 'createdDate'>): WorkOrder {
+  // --- Work Order & Resource Management ---
+
+  /**
+   * Checks if a resource (machine) is busy during the requested time window.
+   * Scans both Work Orders and Calendar Events.
+   */
+  public checkResourceConflict(resourceId: string, start: string, end: string): boolean {
+      const s = new Date(start).getTime();
+      const e = new Date(end).getTime();
+
+      // 1. Check Existing Work Orders
+      const conflictWO = this.workOrders.find(w => 
+          w.machineId === resourceId && 
+          w.status !== 'Closed' &&
+          w.startDate && w.endDate &&
+          Math.max(new Date(w.startDate).getTime(), s) <= Math.min(new Date(w.endDate).getTime(), e)
+      );
+
+      // 2. Check Calendar Events (Simplistic: if event location matches machine ID)
+      const conflictEvent = this.companyEvents.find(ev => 
+          (ev.location === resourceId || ev.description.includes(resourceId)) &&
+          ev.status !== 'Completed' &&
+          new Date(ev.date).getTime() >= s && 
+          new Date(ev.date).getTime() <= e
+      );
+
+      return !!conflictWO || !!conflictEvent;
+  }
+
+  public createWorkOrder(wo: Omit<WorkOrder, 'id' | 'createdDate'>): { order: WorkOrder, conflict: boolean } {
       const newWo: WorkOrder = {
           id: `WO-${Date.now()}`,
           createdDate: new Date().toISOString().split('T')[0],
           ...wo
       };
+      
+      const hasConflict = wo.startDate && wo.endDate 
+          ? this.checkResourceConflict(wo.machineId, wo.startDate, wo.endDate) 
+          : false;
+
       this.workOrders.push(newWo);
-      return newWo;
+      
+      if (hasConflict) {
+          authService.logEvent(
+              authService.getCurrentUser()?.id || 'sys', 
+              'System', 
+              'CONFLICT_DETECTED', 
+              `Resource Conflict: ${wo.machineName} is already booked for dates ${wo.startDate} - ${wo.endDate}`, 
+              'WARNING'
+          );
+      }
+
+      return { order: newWo, conflict: hasConflict };
   }
 
   public updateWorkOrderStatus(id: string, status: WorkOrder['status']) {
@@ -199,6 +243,22 @@ class DataService {
                 location: 'Factory Floor',
                 status: 'Pending',
                 isApproved: true // System generated is auto-approved
+            });
+        }
+    });
+
+    // 5. Work Orders (New Integration)
+    this.workOrders.forEach(wo => {
+        if (wo.startDate) {
+            events.push({
+                id: `WO-EVENT-${wo.id}`,
+                title: `[${wo.category}] ${wo.title}`,
+                date: wo.startDate,
+                type: wo.category === 'Maintenance' ? 'maintenance' : 'general',
+                description: wo.description,
+                location: wo.machineName,
+                status: wo.status === 'Closed' ? 'Completed' : 'Scheduled',
+                isApproved: true
             });
         }
     });
@@ -293,6 +353,7 @@ class DataService {
             this.createWorkOrder({
                 machineId: m.id,
                 machineName: m.name,
+                category: 'Maintenance',
                 title: `Critical Failure: ${m.name}`,
                 description: 'Automated ticket created from machine status change.',
                 priority: 'Critical',
