@@ -101,6 +101,9 @@ Best for accessibility and ease of updates.
 3.  **Deploy:**
     *   Connect your GitHub account.
     *   Select the Nexus repository.
+    *   **Environment Variables:**
+        *   Add `API_KEY` with your Google Gemini Key.
+        *   **Netlify Specific:** Ensure you select **"All scopes"** (especially Build) when adding the key.
     *   Click **Deploy**.
 4.  **Client Access:** Send the generated URL (e.g., `https://nexus-ai-client.vercel.app`) to your client. They can log in from any browser.
 
