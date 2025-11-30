@@ -14,15 +14,20 @@ This section explains the functionality and workflow of each individual module.
 ### 1. 🎫 Work Orders (Enhanced)
 The Work Order system is the central nervous system for task execution. It supports both **Maintenance Repairs** and **Production Runs**.
 
-*   **Who uses it?**
-    *   **Maintenance Teams:** To track repairs, calibrations, and preventive service.
-    *   **Production Managers:** To schedule manufacturing batches (Production Orders).
-    *   **Sales:** To view the status of orders in production.
-*   **How to use it:**
-    *   **Kanban Board:** Tickets move from **Open** -> **In Progress** -> **Closed**. Drag and drop logic (visual only in demo).
-    *   **Creating Tickets:** Click "New Ticket". Select "Maintenance" or "Production".
-    *   **Conflict Detection:** When you select a machine and a date range, the system *automatically* checks if that machine is already booked. If a Maintenance technician tries to book a "Calibration" on a machine scheduled for a "Production Run", a **Conflict Warning** appears immediately.
-    *   **Color Coding:** Orange = Maintenance, Blue = Production.
+*   **What is it for?**
+    *   **Maintenance Teams:** Track repairs, calibrations, and preventive service (e.g., "Replace Bearing").
+    *   **Production Managers:** Schedule manufacturing batches (e.g., "Run 500 units of SKU-A").
+    *   **Sales:** View the status of customer orders in production.
+*   **Role-Based Access:**
+    *   **Maintenance Users** default to seeing "Maintenance" tickets.
+    *   **Sales/Production Users** default to seeing "Production" tickets.
+*   **Conflict Detection Logic (Smart Alerting):**
+    *   The system automatically checks for collisions.
+    *   *Example:* If Maintenance schedules a "Calibration" on Machine A for Tuesday, and Production tries to schedule a "Batch Run" on Machine A for the same day, the system will flash a **Red Warning**.
+    *   This prevents downtime surprises where operators arrive to find a machine dismantled.
+*   **Workflow:**
+    *   Tickets move from **Open** -> **In Progress** -> **Closed**.
+    *   Color Coding: **Orange** = Maintenance, **Blue** = Production.
 
 ### 2. 🛠️ Predictive Maintenance
 *   **Function:** Ingests live sensor data (Vibration, Temperature, RPM) to predict failure.
@@ -45,6 +50,7 @@ The Work Order system is the central nervous system for task execution. It suppo
     1.  **Maintenance** (Predicted & Scheduled dates).
     2.  **Logistics** (Incoming raw materials & Outbound client deliveries).
     3.  **Operations** (Shift changes, audits).
+    4.  **Work Orders** (Automatically syncs start/end dates from the Work Order module).
 *   **Approval:** Regular users can "Request" events. Only Master Admins can "Approve" them.
 
 ---

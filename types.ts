@@ -17,7 +17,7 @@ export enum AppView {
   WORK_ORDERS = 'WORK_ORDERS',
   DOCUMENTS = 'DOCUMENTS',
   PLATFORM_ADMIN = 'PLATFORM_ADMIN',
-  SYSTEM_HEALTH = 'SYSTEM_HEALTH' // New View
+  SYSTEM_HEALTH = 'SYSTEM_HEALTH'
 }
 
 export type ModuleId = 
@@ -44,10 +44,9 @@ export interface ClientConfiguration {
   status: ClientStatus;
   renewalDate?: string;
   enabledModules: Record<ModuleId, boolean>;
-  // Tech Params
   rateLimitPerMinute: number;
   edgeBufferSize: number;
-  defaultIndustry?: IndustryType; // Locks the context if set
+  defaultIndustry?: IndustryType;
 }
 
 export enum IndustryType {
@@ -58,8 +57,6 @@ export enum IndustryType {
 }
 
 export type Language = 'en' | 'es';
-
-// --- Auth & RBAC Types ---
 
 export type UserRole = 'platform_super_admin' | 'master_admin' | 'c_level' | 'admin' | 'sales' | 'manager' | 'operator' | 'viewer';
 
@@ -73,7 +70,6 @@ export interface PermissionSet {
   can_download_reports: boolean;
   can_manage_inventory: boolean;
   can_view_calendar: boolean;
-  // Granular Module Permissions
   can_view_crm: boolean;
   can_view_erp: boolean;
   can_view_quality: boolean;
@@ -83,21 +79,19 @@ export interface PermissionSet {
   can_view_work_orders: boolean;
   can_use_voice_assistant: boolean;
   can_view_documents: boolean;
-  can_view_system_health: boolean; // New Permission
+  can_view_system_health: boolean;
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  passwordHash: string; // SHA-256 Hash
+  passwordHash: string;
   role: UserRole;
   status: 'active' | 'inactive';
   permissions: PermissionSet;
   lastLogin?: string;
 }
-
-// --- Security & Telemetry Types ---
 
 export interface AuditLogEntry {
   id: string;
@@ -131,15 +125,13 @@ export interface SystemMetric {
   errorRate: number;
 }
 
-// --- Maintenance Types ---
-
 export interface SensorReading {
   timestamp: string;
-  temperature: number; // Celsius
-  vibration: number; // mm/s (RMS)
-  rpm: number; // Rotations Per Minute
-  electricCurrent: number; // Amps
-  noiseLevel: number; // dB
+  temperature: number;
+  vibration: number;
+  rpm: number;
+  electricCurrent: number;
+  noiseLevel: number;
 }
 
 export interface MaintenanceLog {
@@ -155,29 +147,28 @@ export interface MachineStatus {
   name: string;
   type: string;
   status: 'Running' | 'Warning' | 'Critical' | 'Stopped';
-  healthScore: number; // 0-100
-  runTimeHours: number; // Total hours since last maintenance
+  healthScore: number;
+  runTimeHours: number;
   lastMaintenance: string;
-  currentDowntimeStart?: string; // ISO string if currently down
-  errorCodes: string[]; // Recent error codes (last 7 days)
+  currentDowntimeStart?: string;
+  errorCodes: string[];
   maintenanceLogs: MaintenanceLog[];
   readings: SensorReading[];
-  // Twin & Energy Data
   gridPosition?: { x: number, y: number };
   energyUsageKwh: number;
 }
 
 export interface MaintenanceInsight {
   status: 'Normal' | 'Warning' | 'Critical';
-  failureProbability: number; // 0-1
+  failureProbability: number;
   predictedFailureWindow: {
     start: string;
     end: string;
   } | null;
-  confidenceLevel: number; // 0-100
-  recommendation: string; // Technical steps
-  summary: string; // Managerial summary
-  downtimePrevented: number; // Estimated minutes saved
+  confidenceLevel: number;
+  recommendation: string;
+  summary: string;
+  downtimePrevented: number;
 }
 
 export interface SensorGuide {
@@ -186,8 +177,6 @@ export interface SensorGuide {
   description: string;
   targetComponent: string;
 }
-
-// --- Production Types ---
 
 export interface SalesRecord {
   date: string;
@@ -207,9 +196,9 @@ export interface ProductSKU {
     reorderPoint: number;
     warehouseLocation: string;
   };
-  salesHistory: SalesRecord[]; // Daily/Weekly history
-  cost: number; // COGS
-  price: number; // Sales Price
+  salesHistory: SalesRecord[];
+  cost: number;
+  price: number;
 }
 
 export type InventoryAction = 'ADD' | 'SUBTRACT' | 'SET';
@@ -221,26 +210,24 @@ export interface ProductionInsight {
     next60: number;
     next90: number;
   };
-  recommendedStartDate: string; // Specific date to start production
-  expectedStockoutDate: string; // When inventory hits 0 if no action
+  recommendedStartDate: string;
+  expectedStockoutDate: string;
   suggestedQuantity: number;
   reasoning: string;
 }
 
 export interface OEEData {
-  availability: number; // %
-  performance: number; // %
-  quality: number; // %
-  overall: number; // %
+  availability: number;
+  performance: number;
+  quality: number;
+  overall: number;
 }
-
-// --- Procurement Types ---
 
 export interface PricePoint {
   date: string;
   price: number;
   currency: 'USD' | 'MXN';
-  exchangeRate: number; // MXN/USD at that time
+  exchangeRate: number;
   supplier: string;
 }
 
@@ -250,8 +237,8 @@ export interface Material {
   category: string;
   currentPrice: number;
   unit: string;
-  moq: number; // Minimum Order Quantity
-  supplierLeadTime: number; // Days
+  moq: number;
+  supplierLeadTime: number;
   priceHistory: PricePoint[];
 }
 
@@ -259,11 +246,11 @@ export interface ProcurementInsight {
   action: 'Buy Now' | 'Wait';
   recommendedWindow: {
     start: string;
-    end: string; // e.g. "Wait 14 days"
+    end: string;
   };
-  predictedPriceTrend: number[]; // Next 6 months curve
+  predictedPriceTrend: number[];
   costSavingsEstimate: string;
-  confidenceInterval: number; // 0-100
+  confidenceInterval: number;
   explanation: string;
 }
 
@@ -271,8 +258,8 @@ export interface SupplierRating {
   id: string;
   name: string;
   materialCategory: string;
-  onTimeDelivery: number; // %
-  qualityScore: number; // 0-10
+  onTimeDelivery: number;
+  qualityScore: number;
   priceCompetitiveness: 'High' | 'Medium' | 'Low';
 }
 
@@ -297,20 +284,18 @@ export interface ShippingCarrier {
   apiStatus: 'Connected' | 'Disconnected' | 'Error';
 }
 
-// --- Calendar & Scheduling Types ---
-
 export type CalendarEventType = 'maintenance' | 'delivery' | 'general' | 'logistics';
 
 export interface CalendarEvent {
   id: string;
   title: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   type: CalendarEventType;
   description: string;
-  location?: string; // Client address or Machine ID
+  location?: string;
   status?: 'Scheduled' | 'Completed' | 'Pending';
   isApproved?: boolean;
-  createdBy?: string; // User ID
+  createdBy?: string;
 }
 
 export interface ClientDelivery {
@@ -321,8 +306,6 @@ export interface ClientDelivery {
   quantity: number;
   deliveryDate: string;
 }
-
-// --- CRM Types ---
 
 export interface Customer {
   id: string;
@@ -345,8 +328,6 @@ export interface SalesOrder {
   items: { skuId: string; quantity: number }[];
 }
 
-// --- ERP Types ---
-
 export interface PurchaseOrder {
   id: string;
   supplierId: string;
@@ -365,8 +346,6 @@ export interface FinancialMetric {
   netProfit: number;
 }
 
-// --- Quality Control Types ---
-
 export interface QualityCheck {
   id: string;
   date: string;
@@ -374,12 +353,10 @@ export interface QualityCheck {
   skuId: string;
   imageUrl?: string;
   detectedDefects: string[];
-  score: number; // 0-100
+  score: number;
   grade: 'A' | 'B' | 'C' | 'D';
   status: 'Pass' | 'Fail' | 'Rework';
 }
-
-// --- Work Order Types ---
 
 export type WorkOrderCategory = 'Maintenance' | 'Production';
 
@@ -394,12 +371,10 @@ export interface WorkOrder {
   status: 'Open' | 'In Progress' | 'Paused' | 'Closed';
   assignedTechnician?: string;
   createdDate: string;
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
+  startDate?: string;
+  endDate?: string;
   resolvedDate?: string;
 }
-
-// --- Energy Types ---
 
 export interface EnergyReading {
   machineId: string;
@@ -408,12 +383,10 @@ export interface EnergyReading {
   cost: number;
 }
 
-// --- Simulation Types ---
-
 export interface SimulationParams {
-  materialCostChange: number; // %
-  laborCostChange: number; // %
-  demandSpike: number; // %
+  materialCostChange: number;
+  laborCostChange: number;
+  demandSpike: number;
   downtimeDays: number;
 }
 
@@ -423,8 +396,6 @@ export interface SimulationResult {
   cashFlowImpact: number;
   recommendations: string[];
 }
-
-// --- Documents Types ---
 
 export interface DocumentResource {
   id: string;
@@ -436,8 +407,6 @@ export interface DocumentResource {
   uploadedBy: string;
 }
 
-// --- General Types ---
-
 export interface Alert {
   id: string;
   type: 'failure' | 'stock' | 'price' | 'info';
@@ -446,14 +415,12 @@ export interface Alert {
   severity: 'info' | 'warning' | 'critical';
 }
 
-// --- Chat & Email Types ---
-
 export type ChatChannel = 'General' | 'Direction' | 'Maintenance' | 'Operations';
 
 export interface ChatMessage {
   id: string;
-  channel?: ChatChannel; // If null, it's a DM
-  recipientId?: string; // For DMs
+  channel?: ChatChannel;
+  recipientId?: string;
   senderId: string;
   senderName: string;
   content: string;

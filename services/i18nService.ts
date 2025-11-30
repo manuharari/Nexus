@@ -239,7 +239,19 @@ const en = {
         ticketBoard: "Ticket Board",
         open: "Open",
         inProgress: "In Progress",
-        closed: "Closed"
+        closed: "Closed",
+        createTicket: "Create New Ticket",
+        newTicket: "New Ticket",
+        category: "Category",
+        priority: "Priority",
+        ticketTitle: "Ticket Title",
+        resource: "Resource (Machine)",
+        startDate: "Start Date",
+        endDate: "End Date",
+        desc: "Description",
+        submitTicket: "Submit Ticket",
+        conflictAlert: "Warning: Resource Conflict Detected!",
+        conflictWarning: "Warning: This machine is already booked for this period."
     },
     energy: {
         consumption: "Power Consumption",

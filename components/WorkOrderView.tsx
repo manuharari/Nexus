@@ -31,7 +31,7 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
 
   useEffect(() => {
     setTickets(dataService.getWorkOrders());
-    // Auto-set filter based on role
+    // Auto-set filter based on role for better UX
     if (currentUser?.role === 'sales') setFilterType('Production');
     if (currentUser?.email.includes('maintenance')) setFilterType('Maintenance');
   }, []);
@@ -54,7 +54,7 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
       });
 
       if (result.conflict) {
-          alert("Warning: This ticket was created but conflicts with an existing schedule. Please review.");
+          alert(t.conflictAlert);
       }
 
       setTickets([...dataService.getWorkOrders()]);
@@ -66,6 +66,8 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
       if (newMachine && newStart && newEnd) {
           const hasConflict = dataService.checkResourceConflict(newMachine, newStart, newEnd);
           setConflictWarning(hasConflict);
+      } else {
+          setConflictWarning(false);
       }
   };
 
@@ -105,11 +107,12 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
                         </div>
                         
                         <div className="flex gap-2 mb-2">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-1 ${
                                 ticket.category === 'Maintenance' 
                                 ? 'bg-orange-900/20 text-orange-400 border-orange-900/50' 
                                 : 'bg-blue-900/20 text-blue-400 border-blue-900/50'
                             }`}>
+                                {ticket.category === 'Maintenance' ? <Hammer className="w-3 h-3" /> : <Factory className="w-3 h-3" />}
                                 {ticket.category}
                             </span>
                             <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded truncate max-w-[100px]">{ticket.machineName}</span>
@@ -139,21 +142,21 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
             <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6">
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-white">Create New Ticket</h3>
+                        <h3 className="text-lg font-bold text-white">{t.createTicket}</h3>
                         <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
                     </div>
                     
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Type</label>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.category}</label>
                                 <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none">
                                     <option value="Maintenance">Maintenance</option>
                                     <option value="Production">Production</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Priority</label>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.priority}</label>
                                 <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none">
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
@@ -164,12 +167,12 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Title</label>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.ticketTitle}</label>
                             <input value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none" placeholder="e.g. Belt Replacement" />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Resource (Machine)</label>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.resource}</label>
                             <select value={newMachine} onChange={e => setNewMachine(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none">
                                 <option value="">Select Resource...</option>
                                 {machines.map(m => (
@@ -180,11 +183,11 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Start Date</label>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.startDate}</label>
                                 <input type="date" value={newStart} onChange={e => setNewStart(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none" />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">End Date</label>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.endDate}</label>
                                 <input type="date" value={newEnd} onChange={e => setNewEnd(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none" />
                             </div>
                         </div>
@@ -192,16 +195,18 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
                         {conflictWarning && (
                             <div className="bg-rose-900/20 border border-rose-900/50 p-3 rounded-lg flex items-center gap-2">
                                 <AlertTriangle className="w-4 h-4 text-rose-500" />
-                                <span className="text-xs text-rose-300">Warning: Resource is busy during this time slot.</span>
+                                <span className="text-xs text-rose-300 font-bold">{t.conflictWarning}</span>
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Description</label>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t.desc}</label>
                             <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white outline-none h-20" />
                         </div>
 
-                        <button onClick={handleCreate} className="w-full bg-primary-600 hover:bg-primary-500 text-white py-2 rounded-lg font-bold">Create Ticket</button>
+                        <button onClick={handleCreate} className="w-full bg-primary-600 hover:bg-primary-500 text-white py-2 rounded-lg font-bold">
+                            {t.submitTicket}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -229,7 +234,7 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
                     onClick={() => setIsModalOpen(true)}
                     className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary-900/20"
                 >
-                    <Plus className="w-4 h-4" /> New Ticket
+                    <Plus className="w-4 h-4" /> {t.newTicket}
                 </button>
             </div>
        </div>
