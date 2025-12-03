@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Activity, Lock, User as UserIcon, Globe, Building2, ShieldCheck, Briefcase, DollarSign, Wrench, Factory } from 'lucide-react';
+import { Lock, User as UserIcon, Globe, Building2, ShieldCheck, Briefcase, DollarSign, Wrench, Factory } from 'lucide-react';
 import { authService } from '../services/authService';
 import { configService } from '../services/configService';
 import { Language } from '../types';
 import { getTranslation } from '../services/i18nService';
+import Logo from './Logo';
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
@@ -67,12 +68,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, lang, onToggleLan
 
       <div className="w-full max-w-md relative z-10 px-6">
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl">
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-cyan rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-primary-500/20">
-              <Activity className="text-white w-7 h-7" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Nexus AI</h1>
-            <p className="text-slate-400 text-sm mt-1">{t.title}</p>
+          <div className="flex flex-col items-center mb-10 mt-2">
+            <Logo size="xl" showText={true} />
+            <p className="text-slate-400 text-sm mt-4 font-medium tracking-wide">{t.title}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

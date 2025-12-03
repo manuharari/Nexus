@@ -28,7 +28,10 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
     rateLimitPerMinute: 1000,
     edgeBufferSize: 5000,
     // Demo account remains unlocked to show versatility
-    defaultIndustry: undefined 
+    defaultIndustry: undefined,
+    branding: {
+        companyNameOverride: 'Nexus Manufacturing AI'
+    }
   },
   {
     clientId: 'tech-auto',
@@ -44,7 +47,10 @@ const INITIAL_CLIENTS: ClientConfiguration[] = [
     },
     rateLimitPerMinute: 5000,
     edgeBufferSize: 10000,
-    defaultIndustry: IndustryType.AUTOMOTIVE
+    defaultIndustry: IndustryType.AUTOMOTIVE,
+    branding: {
+        logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png' // Public mock URL for demo
+    }
   },
   {
     clientId: 'mid-mfg',

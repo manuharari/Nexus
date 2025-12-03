@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, ShieldCheck, ToggleLeft, ToggleRight, Settings, Plus, Trash2, Save, X, Search, CreditCard } from 'lucide-react';
+import { Building2, ShieldCheck, ToggleLeft, ToggleRight, Settings, Plus, Trash2, Save, X, Search, CreditCard, Palette, Image as ImageIcon } from 'lucide-react';
 import { configService } from '../services/configService';
 import { ClientConfiguration, ModuleId, Language, ClientStatus } from '../types';
 import { getTranslation } from '../services/i18nService';
@@ -15,6 +15,7 @@ const PlatformAdminView: React.FC<PlatformAdminViewProps> = ({ lang = 'en' }) =>
   const [selectedClient, setSelectedClient] = useState<ClientConfiguration | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'modules' | 'branding'>('details');
   
   // Form State
   const [formData, setFormData] = useState<Partial<ClientConfiguration>>({});
@@ -36,15 +37,21 @@ const PlatformAdminView: React.FC<PlatformAdminViewProps> = ({ lang = 'en' }) =>
         contactEmail: '',
         status: 'Pending',
         planTier: 'Basic',
-        enabledModules: { ...configService.getClientConfig().enabledModules } // Copy current or default
+        enabledModules: { ...configService.getClientConfig().enabledModules }, // Copy current or default
+        branding: {} 
     });
     setEditMode(false);
+    setActiveTab('details');
     setIsModalOpen(true);
   };
 
   const handleEdit = (client: ClientConfiguration) => {
-    setFormData({ ...client });
+    setFormData({ 
+        ...client,
+        branding: client.branding || {} 
+    });
     setEditMode(true);
+    setActiveTab('details');
     setIsModalOpen(true);
   };
 
@@ -92,81 +99,159 @@ const PlatformAdminView: React.FC<PlatformAdminViewProps> = ({ lang = 'en' }) =>
        {/* Modal for Edit/Create */}
        {isModalOpen && (
            <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6">
-               <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-4xl max-h-full overflow-y-auto shadow-2xl flex flex-col">
-                   <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10">
+               <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                   <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 sticky top-0 z-10 shrink-0">
                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
                            <Building2 className="w-6 h-6 text-primary-500" /> {editMode ? 'Edit Tenant' : 'New Tenant Onboarding'}
                        </h3>
                        <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
                    </div>
                    
-                   <div className="p-6 space-y-8">
-                       {/* Section 1: Basic Info */}
-                       <div>
-                           <h4 className="text-sm font-bold text-primary-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Account Details</h4>
-                           <div className="grid grid-cols-2 gap-4">
-                               <div>
-                                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Company Name</label>
-                                   <input value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none" />
-                               </div>
-                               <div>
-                                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Tenant ID (Slug)</label>
-                                   <input disabled={editMode} value={formData.clientId} onChange={e => setFormData({...formData, clientId: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none disabled:opacity-50" />
-                               </div>
-                               <div>
-                                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Admin Contact Email</label>
-                                   <input value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none" />
-                               </div>
-                               <div className="grid grid-cols-2 gap-4">
-                                   <div>
-                                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Status</label>
-                                        <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as ClientStatus})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none">
-                                            <option value="Active">Active</option>
-                                            <option value="Pending">Pending Payment</option>
-                                            <option value="Suspended">Suspended</option>
-                                        </select>
-                                   </div>
-                                   <div>
-                                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Tier</label>
-                                        <select value={formData.planTier} onChange={e => setFormData({...formData, planTier: e.target.value as any})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none">
-                                            <option value="Basic">Basic</option>
-                                            <option value="Pro">Pro</option>
-                                            <option value="Enterprise">Enterprise</option>
-                                        </select>
-                                   </div>
-                               </div>
-                           </div>
-                       </div>
-
-                       {/* Section 2: Feature Flags */}
-                       <div>
-                           <h4 className="text-sm font-bold text-accent-cyan uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Module Configuration (Feature Flags)</h4>
-                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                               {configService.getAllModuleIds().map(moduleId => (
-                                   <div 
-                                      key={moduleId} 
-                                      onClick={() => toggleModule(moduleId)}
-                                      className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${
-                                          formData.enabledModules?.[moduleId] 
-                                          ? 'bg-emerald-900/10 border-emerald-500/30 hover:bg-emerald-900/20' 
-                                          : 'bg-slate-950 border-slate-800 opacity-60 hover:opacity-100'
-                                      }`}
-                                   >
-                                       <span className="text-sm font-medium text-slate-300 capitalize">
-                                           {moduleId.replace(/_/g, ' ')}
-                                       </span>
-                                       {formData.enabledModules?.[moduleId] ? (
-                                           <ToggleRight className="w-6 h-6 text-emerald-500" />
-                                       ) : (
-                                           <ToggleLeft className="w-6 h-6 text-slate-600" />
-                                       )}
-                                   </div>
-                               ))}
-                           </div>
-                       </div>
+                   {/* Tabs */}
+                   <div className="flex border-b border-slate-800 bg-slate-900 px-6 pt-2">
+                       <button onClick={() => setActiveTab('details')} className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-500 text-white' : 'border-transparent text-slate-400 hover:text-white'}`}>
+                           Details
+                       </button>
+                       <button onClick={() => setActiveTab('modules')} className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'modules' ? 'border-primary-500 text-white' : 'border-transparent text-slate-400 hover:text-white'}`}>
+                           Modules
+                       </button>
+                       <button onClick={() => setActiveTab('branding')} className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'branding' ? 'border-primary-500 text-white' : 'border-transparent text-slate-400 hover:text-white'}`}>
+                           Branding (Whitelabel)
+                       </button>
                    </div>
 
-                   <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-950/50 sticky bottom-0">
+                   <div className="p-6 space-y-8 overflow-y-auto flex-1">
+                       
+                       {/* TAB 1: DETAILS */}
+                       {activeTab === 'details' && (
+                           <div>
+                               <h4 className="text-sm font-bold text-primary-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Account Information</h4>
+                               <div className="grid grid-cols-2 gap-4">
+                                   <div>
+                                       <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Company Name</label>
+                                       <input value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none" />
+                                   </div>
+                                   <div>
+                                       <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Tenant ID (Slug)</label>
+                                       <input disabled={editMode} value={formData.clientId} onChange={e => setFormData({...formData, clientId: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none disabled:opacity-50" />
+                                   </div>
+                                   <div>
+                                       <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Admin Contact Email</label>
+                                       <input value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none" />
+                                   </div>
+                                   <div className="grid grid-cols-2 gap-4">
+                                       <div>
+                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Status</label>
+                                            <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as ClientStatus})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none">
+                                                <option value="Active">Active</option>
+                                                <option value="Pending">Pending Payment</option>
+                                                <option value="Suspended">Suspended</option>
+                                            </select>
+                                       </div>
+                                       <div>
+                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Tier</label>
+                                            <select value={formData.planTier} onChange={e => setFormData({...formData, planTier: e.target.value as any})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none">
+                                                <option value="Basic">Basic</option>
+                                                <option value="Pro">Pro</option>
+                                                <option value="Enterprise">Enterprise</option>
+                                            </select>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       )}
+
+                       {/* TAB 2: MODULES */}
+                       {activeTab === 'modules' && (
+                           <div>
+                               <h4 className="text-sm font-bold text-accent-cyan uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Module Configuration (Feature Flags)</h4>
+                               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                   {configService.getAllModuleIds().map(moduleId => (
+                                       <div 
+                                          key={moduleId} 
+                                          onClick={() => toggleModule(moduleId)}
+                                          className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${
+                                              formData.enabledModules?.[moduleId] 
+                                              ? 'bg-emerald-900/10 border-emerald-500/30 hover:bg-emerald-900/20' 
+                                              : 'bg-slate-950 border-slate-800 opacity-60 hover:opacity-100'
+                                          }`}
+                                       >
+                                           <span className="text-sm font-medium text-slate-300 capitalize">
+                                               {moduleId.replace(/_/g, ' ')}
+                                           </span>
+                                           {formData.enabledModules?.[moduleId] ? (
+                                               <ToggleRight className="w-6 h-6 text-emerald-500" />
+                                           ) : (
+                                               <ToggleLeft className="w-6 h-6 text-slate-600" />
+                                           )}
+                                       </div>
+                                   ))}
+                               </div>
+                           </div>
+                       )}
+
+                       {/* TAB 3: BRANDING */}
+                       {activeTab === 'branding' && (
+                           <div>
+                               <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Whitelabel Settings</h4>
+                               <div className="space-y-6">
+                                   <div>
+                                       <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Company Name Override</label>
+                                       <input 
+                                            value={formData.branding?.companyNameOverride || ''} 
+                                            onChange={e => setFormData({
+                                                ...formData, 
+                                                branding: { ...formData.branding, companyNameOverride: e.target.value }
+                                            })} 
+                                            placeholder="e.g. Acme Corp Analytics"
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:border-primary-500 outline-none" 
+                                       />
+                                       <p className="text-[10px] text-slate-500 mt-1">Replaces "Nexus Manufacturing AI" in the header title.</p>
+                                   </div>
+
+                                   <div>
+                                       <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Logo URL (Public Image Link)</label>
+                                       <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                                <input 
+                                                        value={formData.branding?.logoUrl || ''} 
+                                                        onChange={e => setFormData({
+                                                            ...formData, 
+                                                            branding: { ...formData.branding, logoUrl: e.target.value }
+                                                        })} 
+                                                        placeholder="https://example.com/logo.png"
+                                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-3 text-white focus:border-primary-500 outline-none" 
+                                                />
+                                            </div>
+                                       </div>
+                                       
+                                   </div>
+
+                                   {/* Preview Area */}
+                                   <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center">
+                                       <span className="text-xs text-slate-500 uppercase mb-4">Sidebar Preview</span>
+                                       <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg flex items-center gap-3 w-64">
+                                            {/* Render Logo Logic inline for preview */}
+                                            <div className="w-10 h-10 shrink-0">
+                                                {formData.branding?.logoUrl ? (
+                                                    <img src={formData.branding.logoUrl} className="w-full h-full object-contain" alt="Preview" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-primary-600 rounded-full flex items-center justify-center text-xs text-white">Default</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-white text-xl">NEXUS</div>
+                                                <div className="text-[0.6rem] text-accent-cyan tracking-widest uppercase">Manufacturing AI</div>
+                                            </div>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       )}
+                   </div>
+
+                   <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-950/50 sticky bottom-0 shrink-0">
                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white text-sm">Cancel</button>
                        <button onClick={handleSave} className="px-6 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-bold flex items-center gap-2">
                            <Save className="w-4 h-4" /> Save Configuration
@@ -235,8 +320,12 @@ const PlatformAdminView: React.FC<PlatformAdminViewProps> = ({ lang = 'en' }) =>
                            <tr key={client.clientId} className="hover:bg-slate-800/50 transition-colors group">
                                <td className="px-6 py-4">
                                    <div className="flex items-center gap-3">
-                                       <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 font-bold border border-slate-700">
-                                           {client.clientName.charAt(0)}
+                                       <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 font-bold border border-slate-700 overflow-hidden">
+                                           {client.branding?.logoUrl ? (
+                                               <img src={client.branding.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+                                           ) : (
+                                               client.clientName.charAt(0)
+                                           )}
                                        </div>
                                        <div>
                                            <div className="font-bold text-white">{client.clientName}</div>
@@ -273,7 +362,7 @@ const PlatformAdminView: React.FC<PlatformAdminViewProps> = ({ lang = 'en' }) =>
                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                        <button 
                                           onClick={() => handleEdit(client)}
-                                          className="p-2 bg-slate-800 hover:bg-primary-600 hover:text-white rounded-lg text-slate-400 transition-colors" title="Configure Modules"
+                                          className="p-2 bg-slate-800 hover:bg-primary-600 hover:text-white rounded-lg text-slate-400 transition-colors" title="Configure Tenant"
                                        >
                                            <Settings className="w-4 h-4" />
                                        </button>

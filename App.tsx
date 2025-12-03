@@ -50,6 +50,7 @@ import DocumentsView from './components/DocumentsView';
 import PlatformAdminView from './components/PlatformAdminView';
 import SystemHealthView from './components/SystemHealthView';
 import ShareModal from './components/ShareModal';
+import Logo from './components/Logo';
 import { hasApiKey } from './services/geminiService';
 import { authService } from './services/authService';
 import { dataService } from './services/dataService';
@@ -259,16 +260,8 @@ const App: React.FC = () => {
         className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
         fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-900 border-r border-slate-800 transition-transform duration-300 ease-in-out flex flex-col`}
       >
-        <div className="h-16 flex items-center px-6 border-b border-slate-800 shrink-0">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-accent-cyan rounded-lg flex items-center justify-center mr-3">
-             <Activity className="text-white w-5 h-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                Nexus AI
-            </span>
-            <span className="text-[10px] text-emerald-400 font-medium">{clientConfig.planTier}</span>
-          </div>
+        <div className="h-20 flex items-center px-6 border-b border-slate-800 shrink-0">
+          <Logo size="sm" showText={true} />
         </div>
 
         <div className="px-3 py-4 space-y-3 bg-slate-950/30 shrink-0">
@@ -318,7 +311,7 @@ const App: React.FC = () => {
            </button>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto py-2">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto py-2 custom-scrollbar">
           
           {currentUser.role === 'platform_super_admin' && (
               <div className="mb-4">
@@ -358,7 +351,7 @@ const App: React.FC = () => {
 
         </nav>
 
-        <div className="p-4 border-t border-slate-800 space-y-4 shrink-0">
+        <div className="p-4 border-t border-slate-800 space-y-4 shrink-0 bg-slate-900">
           <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${apiKeyMissing ? 'bg-red-900/20 text-red-400 border border-red-900/50' : 'bg-emerald-900/20 text-emerald-400 border border-emerald-900/50'}`}>
              {apiKeyMissing ? t.sidebar.missingKey : <><Lock className="w-3 h-3" /> {t.sidebar.secure}</>}
           </div>
@@ -401,7 +394,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-950 relative">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-950 relative custom-scrollbar">
             {renderView()}
         </div>
       </main>

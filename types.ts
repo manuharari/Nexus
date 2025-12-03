@@ -36,6 +36,12 @@ export type ModuleId =
 
 export type ClientStatus = 'Active' | 'Pending' | 'Suspended';
 
+export interface ClientBranding {
+  logoUrl?: string;
+  primaryColor?: string;
+  companyNameOverride?: string;
+}
+
 export interface ClientConfiguration {
   clientId: string;
   clientName: string;
@@ -47,6 +53,7 @@ export interface ClientConfiguration {
   rateLimitPerMinute: number;
   edgeBufferSize: number;
   defaultIndustry?: IndustryType;
+  branding?: ClientBranding;
 }
 
 export enum IndustryType {
