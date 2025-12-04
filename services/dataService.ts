@@ -1,5 +1,5 @@
 
-import { MachineStatus, ProductSKU, Material, SensorReading, SalesRecord, PricePoint, IndustryType, CalendarEvent, ClientDelivery, IncomingShipment, Customer, SalesOrder, WorkOrder, FinancialMetric, ShippingCarrier, DocumentResource, InventoryAction, DailyReport } from '../types';
+import { MachineStatus, ProductSKU, Material, SensorReading, SalesRecord, PricePoint, IndustryType, CalendarEvent, ClientDelivery, IncomingShipment, Customer, SalesOrder, WorkOrder, FinancialMetric, ShippingCarrier, DocumentResource, InventoryAction, DailyReport, MapTile, TileType } from '../types';
 import { MOCK_DATASETS, MOCK_DELIVERIES, MOCK_COMPANY_EVENTS, MOCK_INCOMING_SHIPMENTS, MOCK_CUSTOMERS, MOCK_ORDERS, MOCK_WORK_ORDERS, MOCK_FINANCIALS, MOCK_DOCUMENTS } from '../constants';
 import { securityService } from './securityService';
 import { authService } from './authService';
@@ -8,6 +8,8 @@ class DataService {
   private currentIndustry: IndustryType = IndustryType.DISCRETE_MFG;
   
   private machines: MachineStatus[] = [...MOCK_DATASETS[IndustryType.DISCRETE_MFG].machines];
+  private mapTiles: MapTile[] = []; // Floor layout
+
   private skus: ProductSKU[] = [...MOCK_DATASETS[IndustryType.DISCRETE_MFG].skus];
   private materials: Material[] = [...MOCK_DATASETS[IndustryType.DISCRETE_MFG].materials];
   
@@ -27,8 +29,16 @@ class DataService {
     { id: 'ups', name: 'UPS Logistics', apiStatus: 'Connected' }
   ];
 
+  constructor() {
+      // Initialize map with default dimensions for existing machines
+      this.machines.forEach(m => {
+          if (!m.dimensions) m.dimensions = { width: 1, height: 1 };
+      });
+  }
+
   // --- Getters ---
   public getMachines() { return this.machines; }
+  public getMapTiles() { return this.mapTiles; }
   public getSKUs() { return this.skus; }
   public getMaterials() { return this.materials; }
   public getIndustry() { return this.currentIndustry; }
@@ -44,8 +54,14 @@ class DataService {
     this.currentIndustry = type;
     const dataset = MOCK_DATASETS[type];
     this.machines = [...dataset.machines];
+    // Ensure dimensions exist
+    this.machines.forEach(m => {
+        if (!m.dimensions) m.dimensions = { width: 1, height: 1 };
+    });
+    
     this.skus = [...dataset.skus];
     this.materials = [...dataset.materials];
+    this.mapTiles = []; // Reset map layout on switch
     
     authService.logEvent(
       authService.getCurrentUser()?.id || 'sys',
@@ -310,6 +326,36 @@ class DataService {
 
   // --- Machine Status Management ---
   
+  public addMachine(data: { name: string, type: string, width?: number, height?: number }) {
+      const newMachine: MachineStatus = {
+          id: `M-NEW-${Date.now().toString().slice(-6)}`,
+          name: data.name,
+          type: data.type,
+          status: 'Stopped',
+          healthScore: 100,
+          runTimeHours: 0,
+          lastMaintenance: new Date().toISOString().split('T')[0],
+          errorCodes: [],
+          maintenanceLogs: [],
+          readings: [], 
+          energyUsageKwh: 0,
+          gridPosition: undefined,
+          dimensions: { width: data.width || 1, height: data.height || 1 }
+      };
+      
+      this.machines.push(newMachine);
+      
+      authService.logEvent(
+          authService.getCurrentUser()?.id || 'sys',
+          authService.getCurrentUser()?.name || 'System',
+          'ASSET_CREATED',
+          `Created new asset: ${data.name} (${data.width}x${data.height})`,
+          'SUCCESS'
+      );
+      
+      return newMachine;
+  }
+
   public updateMachineStatus(machineId: string, newStatus: MachineStatus['status'], reason: string = 'Manual Status Change') {
     this.machines = this.machines.map(m => {
       if (m.id !== machineId) return m;
@@ -374,24 +420,53 @@ class DataService {
 
   // --- Digital Twin Updates ---
   
+  public setTileType(x: number, y: number, type: TileType) {
+      // Remove existing tile definition if exists
+      this.mapTiles = this.mapTiles.filter(t => t.x !== x || t.y !== y);
+      
+      if (type !== 'floor') { // 'floor' is default/empty
+          this.mapTiles.push({ x, y, type });
+      }
+  }
+
   public updateMachinePosition(machineId: string, x: number | undefined, y: number | undefined) {
-      // Clear position from any other machine at this spot first (if any)
+      const machine = this.machines.find(m => m.id === machineId);
+      if (!machine) return;
+
+      // Logic: If placing (x defined), check collisions with Rectangles
       if (x !== undefined && y !== undefined) {
-          const occupied = this.machines.find(m => m.gridPosition?.x === x && m.gridPosition?.y === y);
-          if (occupied && occupied.id !== machineId) {
-              occupied.gridPosition = undefined;
+          const w = machine.dimensions?.width || 1;
+          const h = machine.dimensions?.height || 1;
+
+          // Check if it overlaps any OTHER machine
+          const collision = this.machines.some(other => {
+              if (other.id === machineId || !other.gridPosition) return false;
+              
+              const otherW = other.dimensions?.width || 1;
+              const otherH = other.dimensions?.height || 1;
+              
+              // AABB Collision Detection
+              return (
+                  x < other.gridPosition.x + otherW &&
+                  x + w > other.gridPosition.x &&
+                  y < other.gridPosition.y + otherH &&
+                  y + h > other.gridPosition.y
+              );
+          });
+
+          if (collision) {
+              console.warn("Cannot place machine: Overlap detected");
+              return; // Do not move
           }
       }
 
-      const machine = this.machines.find(m => m.id === machineId);
-      if (machine) {
-          machine.gridPosition = x !== undefined && y !== undefined ? { x, y } : undefined;
-          authService.logEvent('sys', 'System', 'MAP_UPDATE', `Moved ${machine.name} to ${x},${y}`, 'SUCCESS');
-      }
+      machine.gridPosition = x !== undefined && y !== undefined ? { x, y } : undefined;
+      authService.logEvent('sys', 'System', 'MAP_UPDATE', `Moved ${machine.name} to ${x},${y}`, 'SUCCESS');
   }
 
   public resetFactoryMap() {
       this.machines.forEach(m => m.gridPosition = undefined);
+      this.mapTiles = [];
       authService.logEvent('sys', 'System', 'MAP_RESET', 'Factory map cleared.', 'WARNING');
   }
 
@@ -421,17 +496,14 @@ class DataService {
   }
 
   private ingestMaintenanceData(rows: string[]) {
-    // ... existing logic ...
     return { success: true, message: `Successfully updated telemetry.` };
   }
 
   private ingestProductionData(rows: string[]) {
-    // ... existing logic ...
     return { success: true, message: `Updated sales history & adjusted inventory.` };
   }
 
   private ingestProcurementData(rows: string[]) {
-    // ... existing logic ...
     return { success: true, message: `Updated price history.` };
   }
 }

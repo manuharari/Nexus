@@ -162,7 +162,16 @@ export interface MachineStatus {
   maintenanceLogs: MaintenanceLog[];
   readings: SensorReading[];
   gridPosition?: { x: number, y: number };
+  dimensions?: { width: number, height: number }; // New: Support multi-tile assets
   energyUsageKwh: number;
+}
+
+export type TileType = 'floor' | 'walkway' | 'restricted' | 'wall';
+
+export interface MapTile {
+    x: number;
+    y: number;
+    type: TileType;
 }
 
 export interface MaintenanceInsight {
