@@ -372,6 +372,29 @@ class DataService {
     return this.machines.find(m => m.id === machineId);
   }
 
+  // --- Digital Twin Updates ---
+  
+  public updateMachinePosition(machineId: string, x: number | undefined, y: number | undefined) {
+      // Clear position from any other machine at this spot first (if any)
+      if (x !== undefined && y !== undefined) {
+          const occupied = this.machines.find(m => m.gridPosition?.x === x && m.gridPosition?.y === y);
+          if (occupied && occupied.id !== machineId) {
+              occupied.gridPosition = undefined;
+          }
+      }
+
+      const machine = this.machines.find(m => m.id === machineId);
+      if (machine) {
+          machine.gridPosition = x !== undefined && y !== undefined ? { x, y } : undefined;
+          authService.logEvent('sys', 'System', 'MAP_UPDATE', `Moved ${machine.name} to ${x},${y}`, 'SUCCESS');
+      }
+  }
+
+  public resetFactoryMap() {
+      this.machines.forEach(m => m.gridPosition = undefined);
+      authService.logEvent('sys', 'System', 'MAP_RESET', 'Factory map cleared.', 'WARNING');
+  }
+
   // --- CSV Parsing ---
   public processUpload(type: 'maintenance' | 'production' | 'procurement', rawCsvText: string): { success: boolean, message: string } {
     try {
