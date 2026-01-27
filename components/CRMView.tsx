@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
-import { Language } from '../types';
+import { Language, Customer, SalesOrder } from '../types';
 import { getTranslation } from '../services/i18nService';
-import { Users, Briefcase, TrendingUp, Truck, PackageCheck, Clock } from 'lucide-react';
+import { Users, Briefcase, TrendingUp, Truck, PackageCheck, Clock, Loader2 } from 'lucide-react';
 
 interface CRMViewProps {
   lang?: Language;
@@ -11,9 +11,24 @@ interface CRMViewProps {
 
 const CRMView: React.FC<CRMViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).crm;
-  const customers = dataService.getCustomers();
-  const orders = dataService.getSalesOrders();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'logistics'>('overview');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      const load = async () => {
+          setLoading(true);
+          const c = await dataService.getCustomers();
+          const o = await dataService.getSalesOrders();
+          setCustomers(c);
+          setOrders(o);
+          setLoading(false);
+      };
+      load();
+  }, []);
+
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="flex flex-col h-full gap-6">

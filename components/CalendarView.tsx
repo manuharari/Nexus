@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Truck, Wrench, Users, MapPin, Clock, CheckCircle, Plus, X, ShieldCheck, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Truck, Wrench, Users, MapPin, Clock, CheckCircle, Plus, X, ShieldCheck, Package, Loader2 } from 'lucide-react';
 import { CalendarEvent, CalendarEventType, Language } from '../types';
 import { dataService } from '../services/dataService';
 import { authService } from '../services/authService';
@@ -15,6 +16,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ lang = 'en' }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [filter, setFilter] = useState<CalendarEventType | 'all'>('all');
+  const [loading, setLoading] = useState(true);
   
   // Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -27,7 +29,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ lang = 'en' }) => {
   const isMasterAdmin = currentUser?.role === 'master_admin';
 
   useEffect(() => {
-    setEvents(dataService.getCalendarEvents());
+    setLoading(true);
+    dataService.getCalendarEvents().then(setEvents).finally(() => setLoading(false));
   }, [currentDate]);
 
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -72,26 +75,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({ lang = 'en' }) => {
     }
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = async () => {
       if (!newEventTitle || !newEventDate) return;
-      dataService.addCalendarEvent({
+      await dataService.addCalendarEvent({
           title: newEventTitle,
           date: newEventDate,
           type: newEventType,
           description: newEventDesc,
           status: 'Pending'
       });
-      setEvents(dataService.getCalendarEvents()); // Refresh
+      setEvents(await dataService.getCalendarEvents()); // Refresh
       setIsAddModalOpen(false);
       setNewEventTitle('');
       setNewEventDesc('');
   };
 
-  const handleApproveEvent = (eventId: string) => {
-      dataService.approveCalendarEvent(eventId);
-      setEvents(dataService.getCalendarEvents()); // Refresh
+  const handleApproveEvent = async (eventId: string) => {
+      await dataService.approveCalendarEvent(eventId);
+      setEvents(await dataService.getCalendarEvents()); // Refresh
       setSelectedEvent(null); // Close detail to refresh view
   };
+
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6 relative">

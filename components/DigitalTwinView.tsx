@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { Language, MachineStatus, TileType, MapTile } from '../types';
 import { getTranslation } from '../services/i18nService';
-import { Zap, Edit, Save, Trash2, PlusCircle, Grid, X, PaintBucket, BoxSelect } from 'lucide-react';
+import { Zap, Edit, Save, Trash2, PlusCircle, Grid, X, PaintBucket, BoxSelect, Loader2 } from 'lucide-react';
 import { authService } from '../services/authService';
 
 interface DigitalTwinViewProps {
@@ -14,6 +14,7 @@ const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).twin;
   const [machines, setMachines] = useState<MachineStatus[]>([]);
   const [tiles, setTiles] = useState<MapTile[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [editTool, setEditTool] = useState<'place' | 'paint'>('place');
@@ -30,14 +31,17 @@ const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ lang = 'en' }) => {
 
   const canEdit = authService.hasPermission('can_edit_data');
 
-  useEffect(() => {
-      refreshData();
-  }, []);
-
-  const refreshData = () => {
-      setMachines([...dataService.getMachines()]);
-      setTiles([...dataService.getMapTiles()]);
+  const refreshData = async () => {
+      const m = await dataService.getMachines();
+      const t = await dataService.getMapTiles();
+      setMachines(m);
+      setTiles(t);
   };
+
+  useEffect(() => {
+      setLoading(true);
+      refreshData().finally(() => setLoading(false));
+  }, []);
 
   // 10x6 Grid
   const gridWidth = 10;
@@ -59,13 +63,12 @@ const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ lang = 'en' }) => {
 
   const getTileAt = (x: number, y: number) => tiles.find(t => t.x === x && t.y === y);
 
-  const handleGridClick = (x: number, y: number) => {
+  const handleGridClick = async (x: number, y: number) => {
       if (!isEditMode) return;
 
       if (editTool === 'paint') {
-          // Paint Logic
-          dataService.setTileType(x, y, paintType);
-          refreshData();
+          await dataService.setTileType(x, y, paintType);
+          await refreshData();
           return;
       }
 
@@ -74,32 +77,31 @@ const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ lang = 'en' }) => {
 
       if (occupyingMachine) {
           // Remove if clicked
-          dataService.updateMachinePosition(occupyingMachine.id, undefined, undefined);
+          await dataService.updateMachinePosition(occupyingMachine.id, undefined, undefined);
       } else if (selectedAssetId) {
           // Place if empty and asset selected
-          // Note: dataService checks for overlap collision internally
-          dataService.updateMachinePosition(selectedAssetId, x, y);
+          await dataService.updateMachinePosition(selectedAssetId, x, y);
           setSelectedAssetId(null); // Deselect after place
       }
-      refreshData();
+      await refreshData();
   };
 
-  const handleClearMap = () => {
+  const handleClearMap = async () => {
       if (confirm("Are you sure you want to clear the entire map?")) {
-          dataService.resetFactoryMap();
-          refreshData();
+          await dataService.resetFactoryMap();
+          await refreshData();
       }
   };
 
-  const handleAddAsset = () => {
+  const handleAddAsset = async () => {
       if (!newAssetName || !newAssetType) return;
-      dataService.addMachine({
+      await dataService.addMachine({
           name: newAssetName,
           type: newAssetType,
           width: newWidth,
           height: newHeight
       });
-      refreshData();
+      await refreshData();
       setIsAddAssetModalOpen(false);
       setNewAssetName('');
       setNewAssetType('');
@@ -213,6 +215,8 @@ const DigitalTwinView: React.FC<DigitalTwinViewProps> = ({ lang = 'en' }) => {
       }
       return gridElements;
   };
+
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="h-full flex flex-col gap-4 relative">

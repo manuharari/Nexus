@@ -1,8 +1,9 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
-import { Language } from '../types';
+import { Language, FinancialMetric } from '../types';
 import { getTranslation } from '../services/i18nService';
-import { DollarSign, PieChart, TrendingUp } from 'lucide-react';
+import { DollarSign, PieChart, TrendingUp, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ERPViewProps {
@@ -11,7 +12,14 @@ interface ERPViewProps {
 
 const ERPView: React.FC<ERPViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).erp;
-  const financials = dataService.getFinancials();
+  const [financials, setFinancials] = useState<FinancialMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      dataService.getFinancials().then(setFinancials).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="flex flex-col h-full gap-6">

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Cpu, Zap, AlertOctagon, CheckCircle2, RefreshCw, Gauge, Timer, History, Lock, Info, PenTool, Settings, Play, StopCircle, AlertTriangle } from 'lucide-react';
+import { Activity, Cpu, Zap, AlertOctagon, CheckCircle2, RefreshCw, Gauge, Timer, History, Lock, Info, PenTool, Settings, Play, StopCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { MachineStatus, MaintenanceInsight, Alert, Language } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { analyzeMachineHealth } from '../services/geminiService';
@@ -18,7 +19,8 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
   const [machines, setMachines] = useState<MachineStatus[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<MachineStatus | null>(null);
   const [insight, setInsight] = useState<MaintenanceInsight | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingAI, setLoadingAI] = useState(false);
   const [showSensorGuide, setShowSensorGuide] = useState(false);
   
   // Downtime Logic
@@ -31,23 +33,19 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
   const canEdit = authService.hasPermission('can_edit_data');
 
   // Load initial data
-  useEffect(() => {
-    const data = dataService.getMachines();
-    setMachines(data);
-    if (data.length > 0 && !selectedMachine) {
-        setSelectedMachine(data[0]);
-    }
-  }, []);
+  const fetchData = async () => {
+      setLoadingData(true);
+      const data = await dataService.getMachines();
+      setMachines(data);
+      if (data.length > 0 && !selectedMachine) {
+          setSelectedMachine(data[0]);
+      }
+      setLoadingData(false);
+  };
 
-  // Refresh selected machine when data updates
   useEffect(() => {
-    const updatedMachines = dataService.getMachines();
-    setMachines(updatedMachines);
-    if (selectedMachine) {
-        const updatedSelected = updatedMachines.find(m => m.id === selectedMachine.id);
-        if (updatedSelected) setSelectedMachine(updatedSelected);
-    }
-  }, [selectedMachine?.id, activeDowntimeDuration]); 
+    fetchData();
+  }, []);
 
   // Timer for active downtime
   useEffect(() => {
@@ -85,28 +83,37 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
     }
   };
 
-  const handleStatusChange = (newStatus: MachineStatus['status']) => {
+  const handleStatusChange = async (newStatus: MachineStatus['status']) => {
     if (!selectedMachine) return;
 
     if (newStatus === 'Running') {
         setShowResolveModal(true);
     } else {
-        const updated = dataService.updateMachineStatus(selectedMachine.id, newStatus);
-        if (updated) setSelectedMachine(updated);
+        const updated = await dataService.updateMachineStatus(selectedMachine.id, newStatus);
+        if (updated) {
+            setSelectedMachine(updated);
+            // Refresh list too
+            const all = await dataService.getMachines();
+            setMachines(all);
+        }
     }
   };
 
-  const submitResolution = () => {
+  const submitResolution = async () => {
     if (!selectedMachine) return;
-    const updated = dataService.updateMachineStatus(selectedMachine.id, 'Running', resolutionReason);
-    if (updated) setSelectedMachine(updated);
+    const updated = await dataService.updateMachineStatus(selectedMachine.id, 'Running', resolutionReason);
+    if (updated) {
+        setSelectedMachine(updated);
+        const all = await dataService.getMachines();
+        setMachines(all);
+    }
     setShowResolveModal(false);
     setResolutionReason('');
   };
 
   const handleAnalyze = async () => {
     if (!canRunForecasts || !selectedMachine) return;
-    setLoading(true);
+    setLoadingAI(true);
     try {
       const result = await analyzeMachineHealth(selectedMachine);
       setInsight(result);
@@ -129,11 +136,12 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
         }
       }
     } finally {
-      setLoading(false);
+      setLoadingAI(false);
     }
   };
 
-  if (!selectedMachine) return <div>Loading...</div>;
+  if (loadingData && !selectedMachine) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  if (!selectedMachine) return <div>No machines found.</div>;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)] relative">
@@ -191,7 +199,6 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
                   <div className="flex justify-between mb-1"><span className="font-bold text-white">Vibration (Accelerometers)</span> <span className="text-xs bg-primary-900 text-primary-300 px-2 py-1 rounded">Critical</span></div>
                   <p className="text-sm text-slate-400">Mount on bearings and gearboxes. Detects imbalance, misalignment, and bearing wear 3-4 weeks before failure.</p>
                 </div>
-                {/* Additional Guide Content can be localized similarly but kept English for brevity in this pass */}
               </div>
             </div>
             
@@ -340,15 +347,15 @@ const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAlert, lang = 'en' 
                     </div>
                     <button 
                         onClick={handleAnalyze}
-                        disabled={loading || !canRunForecasts}
+                        disabled={loadingAI || !canRunForecasts}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                            loading || !canRunForecasts
+                            loadingAI || !canRunForecasts
                             ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                             : 'bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-900/20'
                         }`}
                     >
-                        {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                        {loading ? t.processing : t.runPrediction}
+                        {loadingAI ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                        {loadingAI ? t.processing : t.runPrediction}
                     </button>
                 </div>
 

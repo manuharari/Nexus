@@ -3,15 +3,45 @@ import { User, PermissionSet, AuditLogEntry } from '../types';
 import { MOCK_USERS, DEFAULT_PERMISSIONS } from '../constants';
 import { securityService } from './securityService';
 
+const USERS_STORAGE_KEY = 'NEXUS_USERS_V1';
+const AUDIT_STORAGE_KEY = 'NEXUS_AUDIT_LOG_V1';
+
 class AuthService {
-  private users: User[] = [...MOCK_USERS];
+  private users: User[] = [];
   private currentUser: User | null = null;
   private auditLog: AuditLogEntry[] = [];
   private loginAttempts: Record<string, number> = {};
 
   constructor() {
+    this.loadUsers();
+    this.loadAuditLog();
     // Initialize audit log with system start
     this.logEvent('SYSTEM', 'SYSTEM', 'SYSTEM_STARTUP', 'Security services initialized.', 'SUCCESS');
+  }
+
+  private loadUsers() {
+      const saved = localStorage.getItem(USERS_STORAGE_KEY);
+      if (saved) {
+          this.users = JSON.parse(saved);
+      } else {
+          this.users = [...MOCK_USERS];
+          this.saveUsers();
+      }
+  }
+
+  private saveUsers() {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(this.users));
+  }
+
+  private loadAuditLog() {
+      const saved = localStorage.getItem(AUDIT_STORAGE_KEY);
+      if (saved) {
+          this.auditLog = JSON.parse(saved);
+      }
+  }
+
+  private saveAuditLog() {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(this.auditLog));
   }
 
   // --- Session Management ---
@@ -30,8 +60,8 @@ class AuthService {
       this.currentUser = { ...user, lastLogin: new Date().toISOString() };
       this.loginAttempts[email] = 0; // Reset failures
       
-      // Create session token (simulated)
-      const sessionToken = securityService.generateSessionToken();
+      // Update last login in storage
+      this.updateUser(this.currentUser);
       
       this.logEvent(user.id, user.name, 'LOGIN_SUCCESS', `User logged in via secure session.`, 'SUCCESS');
       return user;
@@ -55,7 +85,6 @@ class AuthService {
 
   public hasPermission(permissionKey: keyof PermissionSet): boolean {
     if (!this.currentUser) return false;
-    // Master Admin acts as superuser
     if (this.currentUser.role === 'master_admin') return true;
     return this.currentUser.permissions[permissionKey];
   }
@@ -80,6 +109,7 @@ class AuthService {
     };
     
     this.users = [...this.users, user];
+    this.saveUsers();
     this.logEvent(this.currentUser?.id || 'SYSTEM', this.currentUser?.name || 'SYSTEM', 'USER_CREATED', `Created user: ${user.email}`, 'SUCCESS');
     return user;
   }
@@ -92,7 +122,7 @@ class AuthService {
     if (this.currentUser && this.currentUser.id === updatedUser.id) {
       this.currentUser = updatedUser;
     }
-    
+    this.saveUsers();
     this.logEvent(this.currentUser?.id || 'SYSTEM', this.currentUser?.name || 'SYSTEM', 'USER_UPDATED', `Updated user: ${updatedUser.email}. Changes: Role=${updatedUser.role !== oldUser?.role}`, 'SUCCESS');
   }
 
@@ -115,16 +145,15 @@ class AuthService {
       userName,
       action,
       details,
-      ipAddress: '192.168.1.X (Internal)', // Mocked
+      ipAddress: '192.168.1.X (Internal)', 
       status
     };
     this.auditLog.unshift(entry); // Add to start
-    // Keep log size manageable
     if (this.auditLog.length > 500) this.auditLog.pop();
+    this.saveAuditLog();
   }
 
   public getAuditLog(): AuditLogEntry[] {
-    // Only Master Admin should really see this
     return this.auditLog;
   }
 }

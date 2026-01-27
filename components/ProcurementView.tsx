@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Search, ShoppingCart, Calendar, Lock, Truck, Award, Package, BarChart2, Globe, Link2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Search, ShoppingCart, Calendar, Lock, Truck, Award, Package, BarChart2, Globe, Link2, Loader2 } from 'lucide-react';
 import { MOCK_SUPPLIERS } from '../constants';
-import { ProcurementInsight, Material, IncomingShipment, Language } from '../types';
+import { ProcurementInsight, Material, IncomingShipment, Language, ShippingCarrier } from '../types';
 import { optimizeProcurement } from '../services/geminiService';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { authService } from '../services/authService';
@@ -19,38 +20,40 @@ const ProcurementView: React.FC<ProcurementViewProps> = ({ lang = 'en' }) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [insight, setInsight] = useState<ProcurementInsight | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingAI, setLoadingAI] = useState(false);
   const [shipments, setShipments] = useState<IncomingShipment[]>([]);
-  const [carriers, setCarriers] = useState(dataService.getShippingCarriers());
+  const [carriers, setCarriers] = useState<ShippingCarrier[]>([]);
 
   const canRunForecasts = authService.hasPermission('can_run_forecasts');
 
-  useEffect(() => {
-    const data = dataService.getMaterials();
-    setMaterials(data);
-    setShipments(dataService.getIncomingShipments());
-    if (data.length > 0 && !selectedMaterial) {
-        setSelectedMaterial(data[0]);
-    }
-  }, []);
+  const refreshData = async () => {
+      const mat = await dataService.getMaterials();
+      const shp = await dataService.getIncomingShipments();
+      const car = await dataService.getShippingCarriers();
+      setMaterials(mat);
+      setShipments(shp);
+      setCarriers(car);
+      if (mat.length > 0 && (!selectedMaterial || !mat.find(m => m.id === selectedMaterial.id))) {
+          setSelectedMaterial(mat[0]);
+      } else if (selectedMaterial) {
+          const updated = mat.find(m => m.id === selectedMaterial.id);
+          if (updated) setSelectedMaterial(updated);
+      }
+  };
 
   useEffect(() => {
-    const updatedMaterials = dataService.getMaterials();
-    setMaterials(updatedMaterials);
-    if (selectedMaterial) {
-        const updatedSelected = updatedMaterials.find(m => m.id === selectedMaterial.id);
-        if (updatedSelected) setSelectedMaterial(updatedSelected);
-    }
-  }, [selectedMaterial?.id]);
+    setLoadingData(true);
+    refreshData().finally(() => setLoadingData(false));
+  }, []);
 
   const handleAnalyze = async () => {
     if (!canRunForecasts || !selectedMaterial) return;
-    setLoading(true);
+    setLoadingAI(true);
     try {
       const result = await optimizeProcurement(selectedMaterial);
       setInsight(result);
 
-      // AUTOMATED EMAIL TRIGGER
       if (result.action === 'Buy Now') {
         emailService.sendAlertEmail(
             'procurement_team',
@@ -59,16 +62,18 @@ const ProcurementView: React.FC<ProcurementViewProps> = ({ lang = 'en' }) => {
         );
       }
     } finally {
-      setLoading(false);
+      setLoadingAI(false);
     }
   };
 
-  const toggleCarrier = (id: string) => {
-      dataService.toggleCarrierConnection(id);
-      setCarriers([...dataService.getShippingCarriers()]);
+  const toggleCarrier = async (id: string) => {
+      await dataService.toggleCarrierConnection(id);
+      const updated = await dataService.getShippingCarriers();
+      setCarriers(updated);
   };
 
-  if (!selectedMaterial) return <div>Loading...</div>;
+  if (loadingData && !selectedMaterial) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  if (!selectedMaterial) return <div>No materials found.</div>;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -162,16 +167,16 @@ const ProcurementView: React.FC<ProcurementViewProps> = ({ lang = 'en' }) => {
                         </div>
                         <button 
                             onClick={handleAnalyze}
-                            disabled={loading || !canRunForecasts}
+                            disabled={loadingAI || !canRunForecasts}
                             title={canRunForecasts ? t.predictPrice : "Permission Required"}
                             className={`px-6 py-2 rounded-lg font-medium text-sm transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2 ${
-                                loading || !canRunForecasts 
+                                loadingAI || !canRunForecasts 
                                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                                 : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                             }`}
                         >
-                            {loading ? t.analyzing : canRunForecasts ? t.predictPrice : 'Restricted'}
-                            {!loading && canRunForecasts && <DollarSign className="w-4 h-4" />}
+                            {loadingAI ? t.analyzing : canRunForecasts ? t.predictPrice : 'Restricted'}
+                            {!loadingAI && canRunForecasts && <DollarSign className="w-4 h-4" />}
                             {!canRunForecasts && <Lock className="w-4 h-4" />}
                         </button>
                     </div>

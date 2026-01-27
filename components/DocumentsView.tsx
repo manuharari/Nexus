@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Trash2, Upload, File, FileCode, Presentation } from 'lucide-react';
+import { FileText, Download, Trash2, Upload, File, FileCode, Presentation, Loader2 } from 'lucide-react';
 import { Language, DocumentResource } from '../types';
 import { getTranslation } from '../services/i18nService';
 import { dataService } from '../services/dataService';
@@ -13,29 +13,34 @@ interface DocumentsViewProps {
 const DocumentsView: React.FC<DocumentsViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).documents;
   const [docs, setDocs] = useState<DocumentResource[]>([]);
+  const [loading, setLoading] = useState(true);
   const canEdit = authService.hasPermission('can_edit_data');
 
+  const refresh = async () => {
+      setLoading(true);
+      dataService.getDocuments().then(setDocs).finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    setDocs(dataService.getDocuments());
+    refresh();
   }, []);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
-          // Simulate upload
-          dataService.addDocument({
+          await dataService.addDocument({
               title: file.name,
               category: 'Report',
               fileType: 'PDF',
               size: `${(file.size / 1024 / 1024).toFixed(2)} MB`
           });
-          setDocs([...dataService.getDocuments()]);
+          await refresh();
       }
   };
 
-  const handleDelete = (id: string) => {
-      dataService.deleteDocument(id);
-      setDocs([...dataService.getDocuments()]);
+  const handleDelete = async (id: string) => {
+      await dataService.deleteDocument(id);
+      await refresh();
   };
 
   const getIcon = (type: string) => {
@@ -45,6 +50,8 @@ const DocumentsView: React.FC<DocumentsViewProps> = ({ lang = 'en' }) => {
           default: return <File className="w-8 h-8 text-blue-500" />;
       }
   };
+
+  if (loading && docs.length === 0) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="flex flex-col h-full gap-6">

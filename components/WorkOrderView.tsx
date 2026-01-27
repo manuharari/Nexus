@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, User, Clock, Plus, X, AlertTriangle, Hammer, Factory } from 'lucide-react';
-import { Language, WorkOrder, WorkOrderCategory } from '../types';
+import { ClipboardList, User, Clock, Plus, X, AlertTriangle, Hammer, Factory, Loader2 } from 'lucide-react';
+import { Language, WorkOrder, WorkOrderCategory, MachineStatus } from '../types';
 import { getTranslation } from '../services/i18nService';
 import { dataService } from '../services/dataService';
 import { authService } from '../services/authService';
@@ -13,7 +13,9 @@ interface WorkOrderViewProps {
 const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).workOrder;
   const [tickets, setTickets] = useState<WorkOrder[]>([]);
+  const [machines, setMachines] = useState<MachineStatus[]>([]);
   const [filterType, setFilterType] = useState<WorkOrderCategory | 'All'>('All');
+  const [loading, setLoading] = useState(true);
   
   // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,21 +29,28 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
   const [conflictWarning, setConflictWarning] = useState(false);
 
   const currentUser = authService.getCurrentUser();
-  const machines = dataService.getMachines();
+
+  const refreshData = async () => {
+      const t = await dataService.getWorkOrders();
+      const m = await dataService.getMachines();
+      setTickets(t);
+      setMachines(m);
+  };
 
   useEffect(() => {
-    setTickets(dataService.getWorkOrders());
+    setLoading(true);
+    refreshData().finally(() => setLoading(false));
     // Auto-set filter based on role for better UX
     if (currentUser?.role === 'sales') setFilterType('Production');
     if (currentUser?.email.includes('maintenance')) setFilterType('Maintenance');
   }, []);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
       if (!newTitle || !newMachine) return;
       
       const machineName = machines.find(m => m.id === newMachine)?.name || 'Unknown Machine';
       
-      const result = dataService.createWorkOrder({
+      const result = await dataService.createWorkOrder({
           machineId: newMachine,
           machineName: machineName,
           category: newCategory,
@@ -57,14 +66,14 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
           alert(t.conflictAlert);
       }
 
-      setTickets([...dataService.getWorkOrders()]);
+      await refreshData();
       setIsModalOpen(false);
       resetForm();
   };
 
-  const checkConflict = () => {
+  const checkConflict = async () => {
       if (newMachine && newStart && newEnd) {
-          const hasConflict = dataService.checkResourceConflict(newMachine, newStart, newEnd);
+          const hasConflict = await dataService.checkResourceConflict(newMachine, newStart, newEnd);
           setConflictWarning(hasConflict);
       } else {
           setConflictWarning(false);
@@ -134,6 +143,8 @@ const WorkOrderView: React.FC<WorkOrderViewProps> = ({ lang = 'en' }) => {
           </div>
       </div>
   );
+
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
 
   return (
     <div className="flex flex-col h-full gap-6">

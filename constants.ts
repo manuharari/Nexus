@@ -1,3 +1,4 @@
+
 import { MachineStatus, Material, ProductSKU, SensorReading, SalesRecord, PricePoint, User, PermissionSet, SupplierRating, OEEData, IndustryType, ClientDelivery, CalendarEvent, IncomingShipment, Customer, SalesOrder, WorkOrder, FinancialMetric, DocumentResource } from './types';
 
 // --- Auth Mock Data ---
@@ -442,4 +443,5 @@ export const MOCK_INCOMING_SHIPMENTS: IncomingShipment[] = [
   { id: 'INC-202', materialId: 'MAT-002', materialName: 'Copper Wire', supplier: 'TechParts Logistics', quantity: 5, unit: 'Ton', orderDate: '2023-11-15', estimatedArrival: '2023-11-25', status: 'Customs', transportMethod: 'Air' }
 ];
 
-export const GEMINI_MODEL_FLASH = 'gemini-2.5-flash';
+// Using gemini-3-flash-preview for text tasks as per guidelines
+export const GEMINI_MODEL_FLASH = 'gemini-3-flash-preview';

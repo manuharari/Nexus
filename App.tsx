@@ -103,45 +103,51 @@ const App: React.FC = () => {
 
   // --- AUTO-SWITCH INDUSTRY ON CLIENT CHANGE ---
   useEffect(() => {
-      if (clientConfig.defaultIndustry) {
-          setCurrentIndustry(clientConfig.defaultIndustry);
-          dataService.switchIndustry(clientConfig.defaultIndustry);
-      }
+      const updateIndustry = async () => {
+          if (clientConfig.defaultIndustry) {
+              setCurrentIndustry(clientConfig.defaultIndustry);
+              await dataService.switchIndustry(clientConfig.defaultIndustry);
+          }
+      };
+      updateIndustry();
   }, [clientConfig]);
 
   // --- AUTOMATED DAILY REPORT SCHEDULER ---
   useEffect(() => {
       if (!currentUser) return;
 
-      const today = new Date().toISOString().split('T')[0];
-      const lastReportDate = localStorage.getItem('NEXUS_LAST_DAILY_REPORT');
+      const runScheduler = async () => {
+          const today = new Date().toISOString().split('T')[0];
+          const lastReportDate = localStorage.getItem('NEXUS_LAST_DAILY_REPORT');
 
-      if (lastReportDate !== today && currentUser.role === 'master_admin') {
-          // Generate Report
-          const report = dataService.getDailySummary();
-          
-          // Send Email
-          emailService.sendAlertEmail(
-              'master_admin',
-              `[AUTOMATED] Daily Executive Report - ${today}`,
-              `System Status: ${report.machinesAtRisk > 0 ? 'Action Required' : 'Normal'}<br/>
-               Machines at Risk: ${report.machinesAtRisk}<br/>
-               Predicted Stockouts: ${report.stockoutsPredicted}<br/>
-               Detailed CSV attached.`
-          );
+          if (lastReportDate !== today && currentUser.role === 'master_admin') {
+              // Generate Report (Async)
+              const report = await dataService.getDailySummary();
+              
+              // Send Email
+              emailService.sendAlertEmail(
+                  'master_admin',
+                  `[AUTOMATED] Daily Executive Report - ${today}`,
+                  `System Status: ${report.machinesAtRisk > 0 ? 'Action Required' : 'Normal'}<br/>
+                   Machines at Risk: ${report.machinesAtRisk}<br/>
+                   Predicted Stockouts: ${report.stockoutsPredicted}<br/>
+                   Detailed CSV attached.`
+              );
 
-          // Notify UI
-          addAlert({
-              id: `rpt-${Date.now()}`,
-              type: 'info',
-              message: `Daily Report generated and emailed to ${currentUser.email}`,
-              timestamp: new Date().toISOString(),
-              severity: 'info'
-          });
+              // Notify UI
+              addAlert({
+                  id: `rpt-${Date.now()}`,
+                  type: 'info',
+                  message: `Daily Report generated and emailed to ${currentUser.email}`,
+                  timestamp: new Date().toISOString(),
+                  severity: 'info'
+              });
 
-          // Mark as done for today
-          localStorage.setItem('NEXUS_LAST_DAILY_REPORT', today);
-      }
+              // Mark as done for today
+              localStorage.setItem('NEXUS_LAST_DAILY_REPORT', today);
+          }
+      };
+      runScheduler();
   }, [currentUser]);
 
   const resetIdleTimer = () => {
@@ -264,52 +270,54 @@ const App: React.FC = () => {
           <Logo size="sm" showText={true} />
         </div>
 
-        <div className="px-3 py-4 space-y-3 bg-slate-950/30 shrink-0">
-           <div className="bg-slate-950 rounded-lg p-2 border border-slate-800 space-y-1">
-              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Client Profile</label>
-              <div className="flex items-center gap-2 relative">
-                <Building className="w-4 h-4 text-slate-400 absolute left-2" />
-                <select 
-                    value={clientConfig.clientId} 
-                    onChange={handleClientChange}
-                    className="w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none cursor-pointer hover:border-slate-500 transition-colors shadow-sm"
-                >
-                    {configService.getAvailableClients().map(c => (
-                        <option key={c.clientId} value={c.clientId}>{c.clientName}</option>
-                    ))}
-                </select>
-              </div>
-           </div>
+        {currentUser.role !== 'platform_super_admin' && (
+            <div className="px-3 py-4 space-y-3 bg-slate-950/30 shrink-0">
+                <div className="bg-slate-950 rounded-lg p-2 border border-slate-800 space-y-1">
+                    <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Client Profile</label>
+                    <div className="flex items-center gap-2 relative">
+                        <Building className="w-4 h-4 text-slate-400 absolute left-2" />
+                        <select 
+                            value={clientConfig.clientId} 
+                            onChange={handleClientChange}
+                            className="w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none cursor-pointer hover:border-slate-500 transition-colors shadow-sm"
+                        >
+                            {configService.getAvailableClients().map(c => (
+                                <option key={c.clientId} value={c.clientId}>{c.clientName}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
-           <div className="bg-slate-950 rounded-lg p-2 border border-slate-800 space-y-1">
-              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Data Context</label>
-              <div className="flex items-center gap-2 relative">
-                <Settings2 className={`w-4 h-4 absolute left-2 ${isIndustryLocked ? 'text-slate-600' : 'text-slate-400'}`} />
-                <select 
-                    value={currentIndustry} 
-                    onChange={handleIndustryChange}
-                    disabled={isIndustryLocked}
-                    className={`w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none shadow-sm transition-colors
-                        ${isIndustryLocked ? 'opacity-50 cursor-not-allowed bg-slate-900 border-slate-800 text-slate-500' : 'cursor-pointer hover:border-slate-500'}
-                    `}
-                >
-                    <option value={IndustryType.DISCRETE_MFG}>{t.sidebar.industryDiscrete}</option>
-                    <option value={IndustryType.PROCESS_PAINT}>{t.sidebar.industryPaint}</option>
-                    <option value={IndustryType.AUTOMOTIVE}>Automotive (Robotics)</option>
-                    <option value={IndustryType.PHARMA}>Pharma (Bio-Process)</option>
-                </select>
-              </div>
-           </div>
+                <div className="bg-slate-950 rounded-lg p-2 border border-slate-800 space-y-1">
+                    <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Data Context</label>
+                    <div className="flex items-center gap-2 relative">
+                        <Settings2 className={`w-4 h-4 absolute left-2 ${isIndustryLocked ? 'text-slate-600' : 'text-slate-400'}`} />
+                        <select 
+                            value={currentIndustry} 
+                            onChange={handleIndustryChange}
+                            disabled={isIndustryLocked}
+                            className={`w-full bg-slate-800 border border-slate-700 rounded text-xs font-medium text-white outline-none pl-8 py-2 appearance-none shadow-sm transition-colors
+                                ${isIndustryLocked ? 'opacity-50 cursor-not-allowed bg-slate-900 border-slate-800 text-slate-500' : 'cursor-pointer hover:border-slate-500'}
+                            `}
+                        >
+                            <option value={IndustryType.DISCRETE_MFG}>{t.sidebar.industryDiscrete}</option>
+                            <option value={IndustryType.PROCESS_PAINT}>{t.sidebar.industryPaint}</option>
+                            <option value={IndustryType.AUTOMOTIVE}>Automotive (Robotics)</option>
+                            <option value={IndustryType.PHARMA}>Pharma (Bio-Process)</option>
+                        </select>
+                    </div>
+                </div>
 
-           <button 
-             onClick={toggleLanguage}
-             className="w-full bg-slate-950 rounded-lg p-2 border border-slate-800 flex items-center gap-3 text-xs font-medium text-slate-300 hover:text-white transition-colors"
-           >
-              <Globe className="w-4 h-4 text-primary-500" />
-              <span className="flex-1 text-left">Language / Idioma</span>
-              <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-700 uppercase">{language}</span>
-           </button>
-        </div>
+                <button 
+                    onClick={toggleLanguage}
+                    className="w-full bg-slate-950 rounded-lg p-2 border border-slate-800 flex items-center gap-3 text-xs font-medium text-slate-300 hover:text-white transition-colors"
+                >
+                    <Globe className="w-4 h-4 text-primary-500" />
+                    <span className="flex-1 text-left">Language / Idioma</span>
+                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-700 uppercase">{language}</span>
+                </button>
+            </div>
+        )}
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto py-2 custom-scrollbar">
           
@@ -394,7 +402,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-950 relative custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-900 relative custom-scrollbar">
             {renderView()}
         </div>
       </main>

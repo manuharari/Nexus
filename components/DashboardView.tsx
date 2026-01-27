@@ -1,6 +1,7 @@
-import React from 'react';
-import { ArrowUpRight, AlertTriangle, CheckCircle, Calendar, TrendingDown, Factory } from 'lucide-react';
-import { AppView, Language } from '../types';
+
+import React, { useState, useEffect } from 'react';
+import { ArrowUpRight, AlertTriangle, CheckCircle, Calendar, TrendingDown, Factory, Loader2 } from 'lucide-react';
+import { AppView, Language, MachineStatus, IndustryType } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MOCK_SALES } from '../constants';
 import { dataService } from '../services/dataService';
@@ -15,11 +16,32 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onChangeView, lang = 'en'
   const t = getTranslation(lang as Language).dashboard;
   const sidebarT = getTranslation(lang as Language).sidebar;
 
-  // Get real status from data service
-  const machines = dataService.getMachines();
-  const activeIndustry = dataService.getIndustry();
+  // Async State
+  const [machines, setMachines] = useState<MachineStatus[]>([]);
+  const [activeIndustry, setActiveIndustry] = useState<IndustryType>(IndustryType.DISCRETE_MFG);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      const load = async () => {
+          setLoading(true);
+          try {
+              const m = await dataService.getMachines();
+              const i = await dataService.getIndustry();
+              setMachines(m);
+              setActiveIndustry(i);
+          } finally {
+              setLoading(false);
+          }
+      };
+      load();
+  }, []);
+
   const warningCount = machines.filter(m => m.status === 'Warning' || m.status === 'Critical').length;
-  const healthAvg = machines.reduce((acc, m) => acc + m.healthScore, 0) / machines.length;
+  const healthAvg = machines.length > 0 ? machines.reduce((acc, m) => acc + m.healthScore, 0) / machines.length : 100;
+
+  if (loading) {
+      return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>;
+  }
 
   return (
     <div className="space-y-6">

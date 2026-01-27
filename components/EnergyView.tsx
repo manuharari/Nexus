@@ -1,6 +1,7 @@
-import React from 'react';
-import { Zap, TrendingDown } from 'lucide-react';
-import { Language } from '../types';
+
+import React, { useState, useEffect } from 'react';
+import { Zap, TrendingDown, Loader2 } from 'lucide-react';
+import { Language, MachineStatus } from '../types';
 import { getTranslation } from '../services/i18nService';
 import { dataService } from '../services/dataService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -11,8 +12,15 @@ interface EnergyViewProps {
 
 const EnergyView: React.FC<EnergyViewProps> = ({ lang = 'en' }) => {
   const t = getTranslation(lang as Language).energy;
-  const machines = dataService.getMachines();
+  const [machines, setMachines] = useState<MachineStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      dataService.getMachines().then(setMachines).finally(() => setLoading(false));
+  }, []);
   
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+
   const totalUsage = machines.reduce((acc, m) => acc + m.energyUsageKwh, 0);
   
   const chartData = machines.map(m => ({

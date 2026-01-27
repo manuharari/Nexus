@@ -77,10 +77,10 @@ const ReportsView: React.FC<ReportsViewProps> = ({ lang = 'en' }) => {
     const file = event.target.files[0];
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
       if (content) {
-        const result = dataService.processUpload(type, content);
+        const result = await dataService.processUpload(type, content);
         setUploadStatus({
           type,
           message: result.message,

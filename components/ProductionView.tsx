@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, BarChart3, Package, AlertCircle, Sparkles, Lock, Gauge, Plus, Minus, Edit, X } from 'lucide-react';
+import { CalendarCheck, BarChart3, Package, AlertCircle, Sparkles, Lock, Gauge, Plus, Minus, Edit, X, Loader2 } from 'lucide-react';
 import { MOCK_OEE } from '../constants';
 import { ProductionInsight, ProductSKU, Language, InventoryAction } from '../types';
 import { forecastProduction } from '../services/geminiService';
@@ -19,7 +19,8 @@ const ProductionView: React.FC<ProductionViewProps> = ({ lang = 'en' }) => {
   const [skus, setSkus] = useState<ProductSKU[]>([]);
   const [selectedSku, setSelectedSku] = useState<ProductSKU | null>(null);
   const [forecast, setForecast] = useState<ProductionInsight | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingAI, setLoadingAI] = useState(false);
   const canRunForecasts = authService.hasPermission('can_run_forecasts');
   const canManageInventory = authService.hasPermission('can_manage_inventory');
 
@@ -29,31 +30,29 @@ const ProductionView: React.FC<ProductionViewProps> = ({ lang = 'en' }) => {
   const [invQty, setInvQty] = useState(0);
   const [invReason, setInvReason] = useState('');
 
-  useEffect(() => {
-    const data = dataService.getSKUs();
-    setSkus(data);
-    if (data.length > 0 && !selectedSku) {
-        setSelectedSku(data[0]);
-    }
-  }, []);
+  const refreshData = async () => {
+      const data = await dataService.getSKUs();
+      setSkus(data);
+      if (data.length > 0 && (!selectedSku || !data.find(s => s.id === selectedSku.id))) {
+          setSelectedSku(data[0]);
+      } else if (selectedSku) {
+          const updated = data.find(s => s.id === selectedSku.id);
+          if (updated) setSelectedSku(updated);
+      }
+  };
 
   useEffect(() => {
-     const updatedSkus = dataService.getSKUs();
-     setSkus(updatedSkus);
-     if (selectedSku) {
-         const updatedSelected = updatedSkus.find(s => s.id === selectedSku.id);
-         if (updatedSelected) setSelectedSku(updatedSelected);
-     }
-  }, [selectedSku?.id, isInventoryModalOpen]); // Refresh on modal close/update
+    setLoadingData(true);
+    refreshData().finally(() => setLoadingData(false));
+  }, []);
 
   const handleForecast = async () => {
     if (!canRunForecasts || !selectedSku) return;
-    setLoading(true);
+    setLoadingAI(true);
     try {
       const result = await forecastProduction(selectedSku);
       setForecast(result);
       
-      // AUTOMATED EMAIL TRIGGER
       const daysUntilStockout = Math.floor((new Date(result.expectedStockoutDate).getTime() - Date.now()) / 86400000);
       if (daysUntilStockout < 14) {
         emailService.sendAlertEmail(
@@ -63,13 +62,14 @@ const ProductionView: React.FC<ProductionViewProps> = ({ lang = 'en' }) => {
         );
       }
     } finally {
-      setLoading(false);
+      setLoadingAI(false);
     }
   };
 
-  const handleInventoryUpdate = () => {
+  const handleInventoryUpdate = async () => {
       if (!selectedSku || invQty <= 0) return;
-      dataService.updateInventory(selectedSku.id, invQty, invAction, invReason);
+      await dataService.updateInventory(selectedSku.id, invQty, invAction, invReason);
+      await refreshData();
       setIsInventoryModalOpen(false);
       setInvQty(0);
       setInvReason('');
@@ -99,7 +99,8 @@ const ProductionView: React.FC<ProductionViewProps> = ({ lang = 'en' }) => {
     );
   };
 
-  if (!selectedSku) return <div>Loading...</div>;
+  if (loadingData && !selectedSku) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  if (!selectedSku) return <div>No SKUs found.</div>;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)] relative">
@@ -231,15 +232,15 @@ const ProductionView: React.FC<ProductionViewProps> = ({ lang = 'en' }) => {
                            )}
                            <button 
                                onClick={handleForecast}
-                               disabled={loading || !canRunForecasts}
+                               disabled={loadingAI || !canRunForecasts}
                                title={canRunForecasts ? "Run Forecast" : "Permission Required"}
                                className={`px-6 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 shadow-lg shadow-primary-900/20 ${
-                                    loading || !canRunForecasts 
+                                    loadingAI || !canRunForecasts 
                                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                                     : 'bg-primary-600 hover:bg-primary-500 text-white'
                                }`}
                            >
-                               {loading ? <Sparkles className="w-4 h-4 animate-spin" /> : canRunForecasts ? <CalendarCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                               {loadingAI ? <Sparkles className="w-4 h-4 animate-spin" /> : canRunForecasts ? <CalendarCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                                {canRunForecasts ? t.generateSchedule : t.restricted}
                            </button>
                        </div>
